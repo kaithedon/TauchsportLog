@@ -1450,47 +1450,19 @@ def render_stories_bar():
 
     html = '<div style="display: flex; overflow-x: auto; padding: 10px 0; gap: 15px; border-bottom: 1px solid #333; margin-bottom: 15px;">'
     
-    # 1. Current User (with Plus Icon)
-    my_uname = st.session_state.username
-    has_my_story = my_uname in active_users
-    
-    my_pic = users_df[users_df['Username'] == my_uname]['Profilbild_Url'].values[0]
-    if not my_pic.startswith("data:image"):
-        my_pic = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
-        
-    my_ring = "border: 3px solid #39ff14; padding: 2px;" if has_my_story else "border: 2px solid #555; padding: 2px;"
-    my_dot = "🟢" if my_uname in drunk_users else "🔴"
-    
-    q_params_my_view = q_params.copy()
-    q_params_my_view["view_story"] = my_uname
-    q_params_my_view["t"] = str(int(time.time() * 1000))
-    my_view_link = "?" + urllib.parse.urlencode(q_params_my_view)
-    
-    my_main_link = my_view_link if has_my_story else upload_link
-    
+    # 1. Dedicated Upload Button
     html += f'''
     <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
-        <div style="position: relative; width: 65px; height: 65px;">
-            <a href="{my_main_link}" target="_self" style="display: block; width: 100%; height: 100%;">
-                <img src="{my_pic}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; {my_ring}">
-            </a>
-            <a href="{upload_link}" target="_self" style="text-decoration: none; position: absolute; bottom: 0; right: -5px; background: #ff4b4b; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; border: 2px solid #0e1117; z-index: 10;">
-                +
-            </a>
-        </div>
-        <div style="text-align: center; font-size: 12px; color: #ccc; margin-top: 5px; width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{my_dot} Du</div>
+        <a href="{upload_link}" target="_self" style="text-decoration: none; width: 65px; height: 65px; border-radius: 50%; background-color: #2b2b2b; display: flex; align-items: center; justify-content: center; border: 2px dashed #ff4b4b;">
+            <span style="font-size: 30px; color: #ff4b4b; font-weight: bold;">+</span>
+        </a>
+        <div style="text-align: center; font-size: 12px; color: #ccc; margin-top: 5px; width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Neu</div>
     </div>
     '''
     
-    # 2. Other Users (Only show if they have a story)
-    other_users = users_df[users_df['Username'] != st.session_state.username]
-    
-    for _, row in other_users.iterrows():
-        uname = row['Username']
-        if uname not in active_users:
-            continue
-            
-        pic = row['Profilbild_Url']
+    # 2. All Active Stories
+    for uname in ordered_active_users:
+        pic = users_df[users_df['Username'] == uname]['Profilbild_Url'].values[0]
         if not pic.startswith("data:image"):
             pic = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
             
@@ -1502,11 +1474,12 @@ def render_stories_bar():
         link = "?" + urllib.parse.urlencode(q_params_view)
         
         status_dot = "🟢" if uname in drunk_users else "🔴"
+        display_name = "Du" if uname == st.session_state.username else uname
         
         html += f'''
         <a href="{link}" target="_self" style="text-decoration: none; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
             <img src="{pic}" style="width: 65px; height: 65px; border-radius: 50%; object-fit: cover; {ring_style}">
-            <div style="text-align: center; font-size: 12px; color: #ccc; margin-top: 5px; width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{status_dot} {uname}</div>
+            <div style="text-align: center; font-size: 12px; color: #ccc; margin-top: 5px; width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{status_dot} {display_name}</div>
         </a>
         '''
         
