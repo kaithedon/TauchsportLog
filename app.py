@@ -1035,14 +1035,23 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
     st.markdown(f"<p style='text-align:center; color:gray; font-size:14px;'>Hochgeladen am: {time_formatted} Uhr ({story_idx+1}/{len(user_stories_df)})</p>", unsafe_allow_html=True)
     st.markdown(f'<img src="{image_data}" style="width:100%; border-radius:10px;">', unsafe_allow_html=True)
     
-    caption = story.get('caption', '')
-    if pd.notna(caption) and str(caption).strip() != "":
-        st.markdown(f"<p style='text-align:center; margin-top:10px; font-weight:bold;'>{caption}</p>", unsafe_allow_html=True)
-        
+    # --- LIKES LOGIC ---
+    likes_str = str(story.get('likes', ''))
+    if likes_str.lower() == 'nan': likes_str = ''
+    liked_by = [u.strip() for u in likes_str.split(',') if u.strip()]
+    
+    i_liked = st.session_state.username in liked_by
+    like_icon = "❤️" if i_liked else "🤍"
+    like_text = f"{like_icon} Fachgerecht ({len(liked_by)})"
+
     st.write("")
     
-    # --- NAVIGATION & DELETE BUTTONS ---
-    col1, col2, col3 = st.columns([1, 1, 1])
+    # --- NAVIGATION, LIKE, & DELETE BUTTONS ---
+    is_own_story = (username == st.session_state.username)
+    if is_own_story:
+        col1, col2, col_del, col3 = st.columns([2, 3, 1, 2])
+    else:
+        col1, col2, col3 = st.columns([2, 3, 2])
     
     curr_user_idx = ordered_active_users.index(username)
     has_prev = (story_idx > 0) or (curr_user_idx > 0)
@@ -1061,34 +1070,50 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                 st.rerun()
             
     with col2:
-        st.write("") # Padding
-        if username == st.session_state.username:
-            col_del1, col_del2, col_del3 = st.columns([1, 2, 1])
-            with col_del2:
-                if st.button("🗑️", help="Story löschen", key=f"del_btn_{username}_{story_idx}"):
-                    with st.spinner("Lösche..."):
-                        stories_df = load_data(SHEET_STORIES)
+        if st.button(like_text, type="primary" if i_liked else "secondary", use_container_width=True, key=f"like_btn_{username}_{story_idx}_{len(liked_by)}"):
+            if i_liked:
+                liked_by.remove(st.session_state.username)
+            else:
+                liked_by.append(st.session_state.username)
+            
+            stories_df = load_data(SHEET_STORIES)
+            if 'likes' not in stories_df.columns:
+                stories_df['likes'] = ""
+                
+            img_prefix = story['image_data'][:100]
+            match_idx = stories_df[(stories_df['username'] == username) & (stories_df['image_data'].str.startswith(img_prefix))].index
+            
+            if not match_idx.empty:
+                new_likes_str = ",".join(liked_by)
+                stories_df.at[match_idx[0], 'likes'] = new_likes_str
+                save_data(SHEET_STORIES, stories_df)
+                
+                user_stories_df.at[user_stories_df.index[story_idx], 'likes'] = new_likes_str
+
+    if is_own_story:
+        with col_del:
+            if st.button("🗑️", help="Story löschen", use_container_width=True, key=f"del_btn_{username}_{story_idx}"):
+                with st.spinner("..."):
+                    stories_df = load_data(SHEET_STORIES)
+                    img_prefix = story['image_data'][:100]
+                    drop_mask = (stories_df['username'] == username) & (stories_df['image_data'].str.startswith(img_prefix))
+                    drop_idx = stories_df[drop_mask].index
+                    
+                    if not drop_idx.empty:
+                        stories_df = stories_df.drop(drop_idx)
+                        save_data(SHEET_STORIES, stories_df)
+                        st.success("Gelöscht!")
                         
-                        # Match by username and the first 100 characters of image_data
-                        img_prefix = story['image_data'][:100]
-                        drop_mask = (stories_df['username'] == username) & (stories_df['image_data'].str.startswith(img_prefix))
-                        drop_idx = stories_df[drop_mask].index
-                        
-                        if not drop_idx.empty:
-                            stories_df = stories_df.drop(drop_idx)
-                            save_data(SHEET_STORIES, stories_df)
-                            st.success("Gelöscht!")
+                        if "view_story" in st.query_params:
+                            del st.query_params["view_story"]
+                        if "story_idx" in st.query_params:
+                            del st.query_params["story_idx"]
                             
-                            if "view_story" in st.query_params:
-                                del st.query_params["view_story"]
-                            if "story_idx" in st.query_params:
-                                del st.query_params["story_idx"]
-                                
-                            import time
-                            time.sleep(1)
-                            st.rerun()
-                        else:
-                            st.error("Story nicht gefunden!")
+                        import time
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.error("Story nicht gefunden!")
                     
     with col3:
         if has_next:
@@ -1101,40 +1126,6 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                     st.query_params["view_story"] = next_user
                     st.query_params["story_idx"] = "0"
                 st.rerun()
-
-    st.write("---")
-
-    # --- LIKE BUTTON ---
-    likes_str = str(story.get('likes', ''))
-    if likes_str.lower() == 'nan': likes_str = ''
-    liked_by = [u.strip() for u in likes_str.split(',') if u.strip()]
-    
-    i_liked = st.session_state.username in liked_by
-    like_icon = "❤️" if i_liked else "🤍"
-    like_text = f"{like_icon} Fachgerecht ({len(liked_by)})"
-    
-    if st.button(like_text, type="primary" if i_liked else "secondary", use_container_width=True, key=f"like_btn_{username}_{story_idx}_{len(liked_by)}"):
-        if i_liked:
-            liked_by.remove(st.session_state.username)
-        else:
-            liked_by.append(st.session_state.username)
-        
-        stories_df = load_data(SHEET_STORIES)
-        if 'likes' not in stories_df.columns:
-            stories_df['likes'] = ""
-            
-        # Match by username and the first 100 characters of image_data
-        img_prefix = story['image_data'][:100]
-        match_idx = stories_df[(stories_df['username'] == username) & (stories_df['image_data'].str.startswith(img_prefix))].index
-        
-        if not match_idx.empty:
-            new_likes_str = ",".join(liked_by)
-            stories_df.at[match_idx[0], 'likes'] = new_likes_str
-            save_data(SHEET_STORIES, stories_df)
-            
-            # Mutate local dataframe so the dialog seamlessly updates without full app rerun
-            user_stories_df.at[user_stories_df.index[story_idx], 'likes'] = new_likes_str
-            # No st.rerun() called here! The dialog will smoothly refresh itself.
 
     if liked_by:
         st.markdown(f"<p style='font-size:12px; color:gray; text-align:center;'>Fachgerecht: {', '.join(liked_by)}</p>", unsafe_allow_html=True)
