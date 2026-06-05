@@ -655,12 +655,19 @@ def statistik_view():
         total_ml = pd.to_numeric(user_logs['Menge_ml'], errors='coerce').sum()
         gesamt_liter = round(total_ml / 1000, 2)
         
+        user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
+        now = pd.Timestamp.now()
+        first_drink_date = user_logs['Zeitstempel'].min()
+        days_active = (now - first_drink_date).days + 1
+        avg_per_day = round(gesamt_getraenke / max(1, days_active), 2)
+        
         promille = calc_promille(uname)
         fav_drink = user_logs['Marke'].value_counts().idxmax()
         
         stats_data.append({
             "Taucher": uname,
             "Getränke": gesamt_getraenke,
+            "Ø pro Tag": avg_per_day,
             "Volumen (L)": gesamt_liter,
             "Fav. Drink": fav_drink,
             "Live Pegel (‰)": promille
@@ -672,6 +679,10 @@ def statistik_view():
         
     stats_df = pd.DataFrame(stats_data)
     stats_df = stats_df.sort_values(by="Getränke", ascending=False).reset_index(drop=True)
+    
+    if not stats_df.empty:
+        winner = stats_df.iloc[0]
+        st.success(f"👑 **All-Time King:** Wir verneigen uns vor **{winner['Taucher']}** mit unfassbaren **{winner['Getränke']} Drinks** ({winner['Volumen (L)']} Liter)! Prost! 🍻")
     
     stats_df.index = stats_df.index + 1
     stats_df.index.name = "Rang"
