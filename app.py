@@ -6,6 +6,9 @@ from gspread_dataframe import set_with_dataframe, get_as_dataframe
 import hashlib
 import datetime
 import uuid
+import base64
+import io
+from PIL import Image
 
 # --- PAGE CONFIG ---
 st.set_page_config(
@@ -322,11 +325,30 @@ def login_view():
             r_gew = st.number_input("Gewicht (kg)", min_value=30.0, max_value=200.0, value=75.0)
             r_groesse = st.number_input("Größe (cm)", min_value=120, max_value=230, value=175)
             r_geschlecht = st.selectbox("Geschlecht", ["Männlich", "Weiblich"])
-            r_pic = st.selectbox("Profilbild", ["🤿", "🦈", "🐙", "🍺", "🍹", "🐋"])
+            
+            st.write("Profilbild auswählen oder hochladen:")
+            r_pic_emoji = st.selectbox("Emoji-Avatar", ["🤿", "🦈", "🐙", "🍺", "🍹", "🐋"])
+            r_pic_file = st.file_uploader("Oder eigenes Bild hochladen (Optional)", type=["jpg", "jpeg", "png"])
             
             if st.button("Registrieren", use_container_width=True):
                 if r_user and r_pass:
-                    success, msg = register_user(r_user, r_pass, r_gew, r_groesse, r_geschlecht, r_pic)
+                    # Handle Image Upload (compress to Base64)
+                    profilbild = r_pic_emoji
+                    if r_pic_file is not None:
+                        try:
+                            img = Image.open(r_pic_file)
+                            img.thumbnail((150, 150)) # Resize to small avatar
+                            # Convert to RGB to ensure JPEG compatibility
+                            if img.mode in ("RGBA", "P"): img = img.convert("RGB")
+                            
+                            buffer = io.BytesIO()
+                            img.save(buffer, format="JPEG", quality=70)
+                            encoded = base64.b64encode(buffer.getvalue()).decode("utf-8")
+                            profilbild = f"data:image/jpeg;base64,{encoded}"
+                        except Exception as e:
+                            st.warning("Bild konnte nicht verarbeitet werden. Nutze Emoji.")
+                            
+                    success, msg = register_user(r_user, r_pass, r_gew, r_groesse, r_geschlecht, profilbild)
                     if success:
                         st.success(msg + " Bitte logge dich nun ein.")
                     else:
@@ -457,7 +479,11 @@ def social_view():
             
         with (col1 if idx % 2 == 0 else col2):
             with st.container(border=True):
-                st.markdown(f"### {pic} {uname}")
+                if pic.startswith("data:image"):
+                    st.markdown(f'<img src="{pic}" style="border-radius: 50%; width: 60px; height: 60px; object-fit: cover; margin-bottom: 10px;">', unsafe_allow_html=True)
+                    st.markdown(f"### {uname}")
+                else:
+                    st.markdown(f"### {pic} {uname}")
                 st.write(f"**Promille:** {p_val} ‰")
                 st.write(f"**Fav. Drink:** {fav_drink}")
 
