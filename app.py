@@ -20,14 +20,14 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- STYLING (Abgrund-Blau & Neon-Cyan) ---
+# --- STYLING (Schwarz & Dunkelgrau) ---
 st.markdown("""
     <style>
     :root {
-        --bg-color: #0A192F;
-        --neon-cyan: #00F5D4;
+        --bg-color: #121212;
+        --neon-cyan: #d4d4d4;
         --text-color: #E2E8F0;
-        --panel-bg: rgba(255, 255, 255, 0.05);
+        --panel-bg: #1e1e1e;
     }
     
     .stApp {
