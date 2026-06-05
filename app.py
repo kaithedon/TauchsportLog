@@ -455,11 +455,17 @@ def login_view():
                 else:
                     st.error("Bitte alle Pflichtfelder ausfüllen.")
 
-def generate_whatsapp_link(username, anzahl, marke, sorte):
-    """Generiert einen wa.me-Link mit vorformulierter Nachricht."""
+def generate_whatsapp_link(username, anzahl, marke, sorte, nr_heute, nr_jahr):
+    """Generiert einen wa.me-Link mit vorformulierter, sauber formatierter Nachricht."""
     import urllib.parse
-    getraenk_str = f"{anzahl}x {marke} ({sorte})"
-    msg = f"🍺 *{username}* hat gerade {getraenk_str} eingebucht! 🥂🎉"
+    msg = (
+        f"🍺 {username} hat gerade eingecheckt\n"
+        f"\n"
+        f"*{anzahl}x {marke}*\n"
+        f"_{sorte}_\n"
+        f"\n"
+        f"Getränk Nr. {nr_heute} heute · Nr. {nr_jahr} dieses Jahr"
+    )
     encoded = urllib.parse.quote(msg)
     return f"https://wa.me/?text={encoded}"
 
@@ -480,8 +486,17 @@ def book_drink_now(marke, sorte, menge, alk_vol, anzahl=1, buchungs_zeit=None):
         })
     logs_df = pd.concat([logs_df, pd.DataFrame(new_logs)], ignore_index=True)
     save_data(SHEET_KONSUM_LOG, logs_df)
+    
+    # Statistiken für WA-Nachricht berechnen (nach dem Speichern)
+    user_logs = logs_df[logs_df['Username'] == st.session_state.username].copy()
+    user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
+    heute = datetime.date.today()
+    dieses_jahr = heute.year
+    nr_heute = len(user_logs[user_logs['Zeitstempel'].dt.date == heute])
+    nr_jahr = len(user_logs[user_logs['Zeitstempel'].dt.year == dieses_jahr])
+    
     st.session_state['show_success_popup'] = True
-    st.session_state['last_wa_link'] = generate_whatsapp_link(st.session_state.username, anzahl, marke, sorte)
+    st.session_state['last_wa_link'] = generate_whatsapp_link(st.session_state.username, anzahl, marke, sorte, nr_heute, nr_jahr)
     st.session_state['last_booked_label'] = f"{anzahl}x {marke}"
     st.rerun()
 
