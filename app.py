@@ -633,22 +633,51 @@ def buchung_view():
     else:
         st.info("Noch keine Getränke heute gebucht.")
 
-def mein_abend_view():
-    st.title("🤿 Promille Status")
+def statistik_view():
+    st.title("🏆 Statistiken")
     
-    promille = calc_promille(st.session_state.username)
-    st.metric("Dein Live-Promillewert", f"{promille} ‰")
-    st.info(get_symptom_info(promille))
-    
+    users_df = load_data(SHEET_USER_DB)
     logs_df = load_data(SHEET_KONSUM_LOG)
-    my_logs = logs_df[logs_df['Username'] == st.session_state.username]
     
-    if my_logs.empty:
-        st.write("Du hast heute noch nichts getrunken.")
+    if logs_df.empty:
+        st.info("Noch keine Daten vorhanden.")
         return
         
-    st.subheader("Deine Deckel")
-    st.dataframe(my_logs[['Zeitstempel', 'Marke', 'Sorte', 'Menge_ml']], use_container_width=True, hide_index=True)
+    stats_data = []
+    for _, user_row in users_df.iterrows():
+        uname = user_row['Username']
+        user_logs = logs_df[logs_df['Username'] == uname]
+        
+        gesamt_getraenke = len(user_logs)
+        if gesamt_getraenke == 0:
+            continue
+            
+        total_ml = pd.to_numeric(user_logs['Menge_ml'], errors='coerce').sum()
+        gesamt_liter = round(total_ml / 1000, 2)
+        
+        promille = calc_promille(uname)
+        fav_drink = user_logs['Marke'].value_counts().idxmax()
+        
+        stats_data.append({
+            "Taucher": uname,
+            "Getränke": gesamt_getraenke,
+            "Volumen (L)": gesamt_liter,
+            "Fav. Drink": fav_drink,
+            "Live Pegel (‰)": promille
+        })
+        
+    if not stats_data:
+        st.info("Noch keine Getränke verbucht.")
+        return
+        
+    stats_df = pd.DataFrame(stats_data)
+    stats_df = stats_df.sort_values(by="Getränke", ascending=False).reset_index(drop=True)
+    
+    stats_df.index = stats_df.index + 1
+    stats_df.index.name = "Rang"
+    stats_df = stats_df.reset_index()
+    
+    st.dataframe(stats_df, use_container_width=True, hide_index=True)
 
 def public_profile_view(uname):
     st.button("🔙 Zurück zur Übersicht", on_click=lambda: st.session_state.pop('view_profile_of', None))
@@ -830,19 +859,6 @@ def social_view():
     st.subheader("Nüchtern (0.0 ‰)")
     render_user_cards(sober_users)
 
-    st.divider()
-    
-    st.subheader("All-Time Rangliste")
-    if not logs_df.empty:
-        leaderboard = logs_df.groupby('Username').size().reset_index(name='Anzahl')
-        leaderboard = leaderboard.sort_values(by='Anzahl', ascending=False).reset_index(drop=True)
-        
-        for i, row in leaderboard.iterrows():
-            medal = "👑" if i == 0 else ("🥈" if i == 1 else ("🥉" if i == 2 else "🍻"))
-            st.write(f"{medal} **{row['Username']}**: {row['Anzahl']} Drinks")
-    else:
-        st.write("Noch keine Daten für die Rangliste vorhanden.")
-        
 
 
 def admin_view():
@@ -982,8 +998,8 @@ else:
             st.session_state.logged_in = False
             st.rerun()
             
-    menu = ["Live", "Getränke buchen", "Promille Status", "Mein Profil"]
-    icons = ["people", "cup-hot", "activity", "person"]
+    menu = ["Live", "Getränke buchen", "Statistiken", "Mein Profil"]
+    icons = ["people", "cup-hot", "bar-chart-line", "person"]
     if st.session_state.role == "Admin":
         menu.append("Admin-Bereich")
         icons.append("gear")
@@ -1005,8 +1021,8 @@ else:
     # Route to views
     if choice == "Getränke buchen":
         buchung_view()
-    elif choice == "Promille Status":
-        mein_abend_view()
+    elif choice == "Statistiken":
+        statistik_view()
     elif choice == "Live":
         social_view()
     elif choice == "Mein Profil":
