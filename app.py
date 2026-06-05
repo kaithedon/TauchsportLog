@@ -779,23 +779,56 @@ def statistik_view():
     stats_df = stats_df.reset_index()
     
     st.divider()
-    st.subheader("📈 Live-Verlauf (All-Time Getränke)")
+    st.subheader("📈 All-Time Getränke Verlauf")
     
     if not logs_df.empty:
+        import altair as alt
+        
         chart_df = logs_df.copy()
         chart_df['Zeitstempel'] = pd.to_datetime(chart_df['Zeitstempel'])
-        chart_df['Count'] = 1
+        chart_df['Datum'] = chart_df['Zeitstempel'].dt.date
         
-        # Gruppieren nach exaktem Zeitstempel für Live-Verfolgung über den Tag
-        pivot_counts = chart_df.pivot_table(
-            index='Zeitstempel', 
-            columns='Username', 
-            values='Count', 
-            aggfunc='sum'
-        ).fillna(0)
+        daily_user_counts = chart_df.groupby(['Datum', 'Username']).size().reset_index(name='Getränke')
         
-        cumulative_drinks = pivot_counts.cumsum()
-        st.line_chart(cumulative_drinks)
+        all_dates = pd.date_range(start=daily_user_counts['Datum'].min(), end=daily_user_counts['Datum'].max())
+        all_users = daily_user_counts['Username'].unique()
+        
+        idx = pd.MultiIndex.from_product([all_dates.date, all_users], names=['Datum', 'Username'])
+        full_grid = pd.DataFrame(index=idx).reset_index()
+        
+        merged = pd.merge(full_grid, daily_user_counts, on=['Datum', 'Username'], how='left').fillna(0)
+        merged = merged.sort_values(['Username', 'Datum'])
+        merged['All-Time Getränke'] = merged.groupby('Username')['Getränke'].cumsum()
+        
+        # Emojis abrufen
+        user_pic_map = {}
+        for _, r in users_df.iterrows():
+            pic = str(r['Profilbild_Url'])
+            if len(pic) < 10 and not pic.startswith("http"):
+                user_pic_map[r['Username']] = pic
+            else:
+                user_pic_map[r['Username']] = "👤"
+                
+        merged['Pic'] = merged['Username'].map(user_pic_map)
+        
+        base = alt.Chart(merged).encode(
+            x=alt.X('Datum:T', axis=alt.Axis(format='%d.%m.', tickCount='day', title='Datum')),
+            y=alt.Y('All-Time Getränke:Q', title='Getränke Gesamt'),
+            color=alt.Color('Username:N', legend=alt.Legend(title="Taucher"))
+        )
+        
+        line = base.mark_line(point=alt.OverlayMarkDef(size=60))
+        
+        text = base.mark_text(
+            align='left',
+            dx=8,
+            dy=-8,
+            fontSize=16
+        ).encode(
+            text='Pic:N'
+        )
+        
+        st.altair_chart((line + text).interactive(), use_container_width=True)
         
     st.divider()
     st.subheader("📋 Rangliste")
