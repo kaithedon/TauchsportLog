@@ -808,6 +808,15 @@ def public_profile_view(uname):
         if not user_logs.empty:
             fav_drink = user_logs['Marke'].value_counts().idxmax()
             st.write(f"**Lieblingsgetränk:** {fav_drink}")
+            
+            user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
+            now = get_now_berlin()
+            cutoff = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            today_logs = user_logs[user_logs['Zeitstempel'] >= cutoff]
+            
+            drinks_today = len(today_logs)
+            liters_today = round(today_logs['Menge_ml'].astype(float).sum() / 1000.0, 2)
+            st.write(f"**Heute getrunken:** {drinks_today} Getränke ({liters_today} Liter)")
     
     st.divider()
     
@@ -1315,6 +1324,25 @@ def profil_view():
         
     user_idx = user_row.index[0]
     curr_data = user_row.iloc[0]
+    
+    # --- PROFIL STATISTIKEN ---
+    logs_df = load_data(SHEET_KONSUM_LOG)
+    my_logs = logs_df[logs_df['Username'] == st.session_state.username].copy()
+    if not my_logs.empty:
+        my_logs['Zeitstempel'] = pd.to_datetime(my_logs['Zeitstempel'])
+        now = get_now_berlin()
+        cutoff = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_logs = my_logs[my_logs['Zeitstempel'] >= cutoff]
+        
+        drinks_today = len(today_logs)
+        liters_today = round(today_logs['Menge_ml'].astype(float).sum() / 1000.0, 2)
+        p_val = calc_promille(st.session_state.username)
+        
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Getränke heute", drinks_today)
+        c2.metric("Liter heute", f"{liters_today} L")
+        c3.metric("Dein Promillewert", f"{p_val} ‰")
+        st.divider()
     
     tab_data, tab_pw = st.tabs(["Profildaten ändern", "Passwort ändern"])
     
