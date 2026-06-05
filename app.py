@@ -334,13 +334,13 @@ def calc_promille(username):
     groesse = float(user_row.iloc[0]['Groesse_cm'])
     geschlecht = user_row.iloc[0]['Geschlecht']
     
-    # Calculate Total Body Water (V) according to Watson
+    # Calculate Reduction Factor (r) according to standard Widmark
     if geschlecht == "Männlich":
-        v = 2.447 - (0.09516 * 29) + (0.1074 * groesse) + (0.3362 * gewicht) # Assuming age 29 as standard if not provided
+        r = 0.70
     else:
-        v = -2.097 + (0.1069 * groesse) + (0.2466 * gewicht)
+        r = 0.60
         
-    if v <= 0: v = 1.0 # Fallback safety
+    if gewicht <= 0: gewicht = 80.0 # Fallback safety
     
     # Load logs for today
     logs_df = load_data(SHEET_KONSUM_LOG)
@@ -370,7 +370,7 @@ def calc_promille(username):
             
         # Promille des aktuellen Getränks hinzufügen
         a = ml * (vol / 100) * 0.8
-        added_promille = a / (v * 1.055)
+        added_promille = a / (gewicht * r)
         current_promille += added_promille
         last_time = drink_time
         
