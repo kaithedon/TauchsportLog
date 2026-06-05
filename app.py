@@ -1335,6 +1335,34 @@ def admin_view():
             else:
                 st.info("Log ist bereits leer.")
 
+    with st.container(border=True):
+        st.markdown("<h3 style='color: #ff4b4b;'>🗑️ Benutzer endgültig löschen</h3>", unsafe_allow_html=True)
+        st.write("Löscht einen Benutzer und alle seine jemals getrunkenen Getränke aus der Live-Datenbank und dem Backup.")
+        
+        all_users = load_data(SHEET_USER_DB)['Username'].tolist()
+        user_to_delete = st.selectbox("Benutzer auswählen", all_users, key="del_user")
+        
+        if st.button("Benutzer mitsamt aller Daten löschen", type="primary", key="del_btn"):
+            if user_to_delete:
+                # 1. Aus User_DB löschen
+                u_df = load_data(SHEET_USER_DB)
+                u_df = u_df[u_df['Username'] != user_to_delete]
+                save_data(SHEET_USER_DB, u_df)
+                
+                # 2. Aus Live Konsum Log löschen
+                l_df = load_data(SHEET_KONSUM_LOG)
+                if not l_df.empty:
+                    l_df = l_df[l_df['Username'] != user_to_delete]
+                    save_data(SHEET_KONSUM_LOG, l_df)
+                    
+                # 3. Aus Backup Historie löschen
+                b_df = load_data(SHEET_BACKUP_HISTORY)
+                if not b_df.empty:
+                    b_df = b_df[b_df['Username'] != user_to_delete]
+                    save_data(SHEET_BACKUP_HISTORY, b_df)
+                    
+                st.success(f"Benutzer '{user_to_delete}' wurde erfolgreich und restlos aus allen Datenbanken vernichtet!")
+
 def profil_view():
     st.title("👤 Mein Profil")
     users_df = load_data(SHEET_USER_DB)
