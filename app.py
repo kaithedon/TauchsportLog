@@ -1072,7 +1072,8 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                         save_data(SHEET_STORIES, stories_df)
                         st.success("Story gelöscht!")
                         
-                        del st.query_params["view_story"]
+                        if "view_story" in st.query_params:
+                            del st.query_params["view_story"]
                         if "story_idx" in st.query_params:
                             del st.query_params["story_idx"]
                             
