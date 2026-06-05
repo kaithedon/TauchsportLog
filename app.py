@@ -1965,6 +1965,16 @@ else:
             "nav-link-selected": {"background-color": "#ff4b4b"},
         }
     )
+    
+    # Reset deep-links when switching tabs
+    if st.session_state.get('last_menu_choice') != choice:
+        st.session_state.last_menu_choice = choice
+        if "view_story" in st.query_params: del st.query_params["view_story"]
+        if "story_idx" in st.query_params: del st.query_params["story_idx"]
+        st.session_state.pop('tracked_story_user', None)
+        st.session_state.pop('tracked_story_idx', None)
+        st.session_state.pop('view_profile_of', None)
+        st.rerun()
             
     # Route to views
     if choice == "Getränke buchen":
