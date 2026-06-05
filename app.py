@@ -371,10 +371,13 @@ def calc_promille(username):
     geschlecht = user_row.iloc[0]['Geschlecht']
     
     # Calculate Reduction Factor (r) according to standard Widmark
+    # ANPASSUNG FÜR ERFAHRENE TRINKER (höherer Muskelanteil / Toleranz)
+    # Standard-Mann: 0.70 -> Erfahren: 0.80
+    # Standard-Frau: 0.60 -> Erfahren: 0.70
     if geschlecht == "Männlich":
-        r = 0.70
+        r = 0.80
     else:
-        r = 0.60
+        r = 0.70
         
     if gewicht <= 0: gewicht = 80.0 # Fallback safety
     
@@ -391,6 +394,9 @@ def calc_promille(username):
     current_promille = 0.0
     last_time = None
     
+    # Abbau-Rate für erfahrene Trinker (Standard 0.15, Erfahren ca. 0.20 - 0.22)
+    abbau_rate_pro_stunde = 0.20
+    
     for _, row in user_logs.iterrows():
         t = row['Zeitstempel']
         ml = float(row['Menge_ml'])
@@ -399,7 +405,7 @@ def calc_promille(username):
         if last_time is not None:
             hours_passed = (t - last_time).total_seconds() / 3600.0
             if hours_passed > 0:
-                current_promille = max(0.0, current_promille - (hours_passed * 0.15))
+                current_promille = max(0.0, current_promille - (hours_passed * abbau_rate_pro_stunde))
                 
         a = ml * (vol / 100) * 0.8
         current_promille += a / (gewicht * r)
@@ -408,7 +414,7 @@ def calc_promille(username):
     if last_time is not None:
         hours_passed = (now - last_time).total_seconds() / 3600.0
         if hours_passed > 0:
-            current_promille = max(0.0, current_promille - (hours_passed * 0.15))
+            current_promille = max(0.0, current_promille - (hours_passed * abbau_rate_pro_stunde))
             
     return round(current_promille, 2)
 
