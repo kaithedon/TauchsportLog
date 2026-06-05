@@ -980,8 +980,8 @@ def upload_story_dialog():
             try:
                 img = Image.open(uploaded_file)
                 # We must ensure the Base64 string is < 50,000 chars for Google Sheets!
-                # 1. Resize to max 400x400 (keeps aspect ratio)
-                img.thumbnail((400, 400), Image.Resampling.LANCZOS)
+                # 1. Resize to max 600x600 (keeps aspect ratio for better quality)
+                img.thumbnail((600, 600), Image.Resampling.LANCZOS)
                 
                 if img.mode != 'RGB':
                     img = img.convert('RGB')
@@ -1017,46 +1017,107 @@ def upload_story_dialog():
                 st.rerun()
 
 @st.dialog("Story")
-def view_story_dialog(username, image_data, timestamp_str):
+def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users):
+    story = user_stories_df.iloc[story_idx]
+    image_data = story['image_data']
+    
     try:
-        ts = pd.to_datetime(timestamp_str)
+        ts = pd.to_datetime(story['timestamp'])
         time_formatted = ts.strftime("%d.%m.%Y, %H:%M")
     except:
-        time_formatted = timestamp_str
+        time_formatted = story['timestamp']
         
     st.markdown(f"<h4 style='text-align:center;'>Story von {username}</h4>", unsafe_allow_html=True)
-    st.markdown(f"<p style='text-align:center; color:gray; font-size:14px;'>Hochgeladen am: {time_formatted} Uhr</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align:center; color:gray; font-size:14px;'>Hochgeladen am: {time_formatted} Uhr ({story_idx+1}/{len(user_stories_df)})</p>", unsafe_allow_html=True)
     st.markdown(f'<img src="{image_data}" style="width:100%; border-radius:10px;">', unsafe_allow_html=True)
+    
+    st.write("")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col1:
+        if st.button("◀", use_container_width=True):
+            if story_idx > 0:
+                st.query_params["view_story"] = username
+                st.query_params["story_idx"] = str(story_idx - 1)
+            else:
+                curr_user_idx = ordered_active_users.index(username)
+                if curr_user_idx > 0:
+                    prev_user = ordered_active_users[curr_user_idx - 1]
+                    st.query_params["view_story"] = prev_user
+                    st.query_params["story_idx"] = "last"
+            st.rerun()
+            
+    with col3:
+        if st.button("▶", use_container_width=True):
+            if story_idx < len(user_stories_df) - 1:
+                st.query_params["view_story"] = username
+                st.query_params["story_idx"] = str(story_idx + 1)
+            else:
+                curr_user_idx = ordered_active_users.index(username)
+                if curr_user_idx < len(ordered_active_users) - 1:
+                    next_user = ordered_active_users[curr_user_idx + 1]
+                    st.query_params["view_story"] = next_user
+                    st.query_params["story_idx"] = "0"
+            st.rerun()
 
 def render_stories_bar():
+    # Load all users and stories
+    users_df = load_data(SHEET_USER_DB)
+    stories_df = load_data(SHEET_STORIES)
+    
+    # Filter active stories (last 48 hours) & CLEANUP
+    if not stories_df.empty:
+        stories_df['timestamp'] = pd.to_datetime(stories_df['timestamp'])
+        now = pd.Timestamp.now()
+        
+        # Auto-Cleanup older than 48 hours
+        valid_mask = stories_df['timestamp'] >= (now - pd.Timedelta(hours=48))
+        if not valid_mask.all():
+            stories_df = stories_df[valid_mask].copy()
+            save_df = stories_df.copy()
+            save_df['timestamp'] = save_df['timestamp'].dt.strftime('%Y-%m-%dT%H:%M:%S.%f')
+            save_data(SHEET_STORIES, save_df)
+            
+        active_stories = stories_df
+        active_users = set(active_stories['username'].unique())
+    else:
+        active_stories = pd.DataFrame()
+        active_users = set()
+
+    # Determine ordered_active_users for navigation
+    ordered_active_users = []
+    my_uname = st.session_state.username
+    if my_uname in active_users:
+        ordered_active_users.append(my_uname)
+        
+    other_active = sorted([u for u in active_users if u != my_uname])
+    ordered_active_users.extend(other_active)
+
     # Handle Dialog Triggers from Query Params
     if st.query_params.get("upload_story"):
         del st.query_params["upload_story"]
         upload_story_dialog()
         
     story_user = st.query_params.get("view_story")
-    if story_user:
+    if story_user and story_user in active_users:
+        story_idx_str = st.query_params.get("story_idx", "0")
         del st.query_params["view_story"]
-        stories_df = load_data(SHEET_STORIES)
-        if not stories_df.empty:
-            stories_df['timestamp'] = pd.to_datetime(stories_df['timestamp'])
-            user_stories = stories_df[stories_df['username'] == story_user]
-            if not user_stories.empty:
-                # Get latest story
-                latest = user_stories.sort_values(by='timestamp', ascending=False).iloc[0]
-                view_story_dialog(latest['username'], latest['image_data'], latest['timestamp'])
-
-    # Load all users and stories
-    users_df = load_data(SHEET_USER_DB)
-    stories_df = load_data(SHEET_STORIES)
-    
-    # Filter active stories (last 48 hours)
-    active_users = set()
-    if not stories_df.empty:
-        stories_df['timestamp'] = pd.to_datetime(stories_df['timestamp'])
-        now = pd.Timestamp.now()
-        active_stories = stories_df[stories_df['timestamp'] >= (now - pd.Timedelta(hours=48))]
-        active_users = set(active_stories['username'].unique())
+        if "story_idx" in st.query_params:
+            del st.query_params["story_idx"]
+            
+        user_stories = active_stories[active_stories['username'] == story_user].sort_values(by='timestamp', ascending=True)
+        
+        if story_idx_str == "last":
+            story_idx = len(user_stories) - 1
+        else:
+            try:
+                story_idx = int(story_idx_str)
+                if story_idx >= len(user_stories) or story_idx < 0:
+                    story_idx = 0
+            except:
+                story_idx = 0
+                
+        view_story_dialog(story_user, story_idx, user_stories, ordered_active_users)
 
     import urllib.parse
     q_params = dict(st.query_params)
