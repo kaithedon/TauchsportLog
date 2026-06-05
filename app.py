@@ -679,18 +679,18 @@ def buchung_view():
     my_logs = logs_df[logs_df['Username'] == st.session_state.username]
     if not my_logs.empty:
         # Get last 5 unique drinks
-        recent = my_logs.drop_duplicates(subset=['Marke', 'Sorte'], keep='last').tail(5)
+        recent = my_logs.drop_duplicates(subset=['Marke', 'Sorte'], keep='last').tail(3)
         if not recent.empty:
-            with st.expander("⚡ Quick-Booking (Letzte Getränke)", expanded=False):
-                cols = st.columns(len(recent))
-                for idx, (_, row) in enumerate(recent.iterrows()):
-                    with cols[idx]:
-                        # Format text cleanly in one line to prevent UI breaking
-                        btn_text = f"{row['Marke']} {row['Sorte'][:12]}" 
-                        if len(btn_text) > 20: btn_text = btn_text[:17] + "..."
-                        
-                        if st.button(f"⚡ {btn_text}", key=f"qb_{row['Log_ID']}", use_container_width=True, help=f"{row['Marke']} {row['Sorte']}"):
-                            book_drink_now(row['Marke'], row['Sorte'], float(row['Menge_ml']), float(row['Alk_Vol']), 1, None, final_lat, final_lon)
+            st.write("**Quick-Booking:**")
+            cols = st.columns(len(recent))
+            for idx, (_, row) in enumerate(recent.iterrows()):
+                with cols[idx]:
+                    # Format text cleanly in one line to prevent UI breaking
+                    btn_text = f"{row['Marke']} {row['Sorte'][:12]}" 
+                    if len(btn_text) > 20: btn_text = btn_text[:17] + "..."
+                    
+                    if st.button(btn_text, key=f"qb_{row['Log_ID']}", use_container_width=True, help=f"{row['Marke']} {row['Sorte']}"):
+                        book_drink_now(row['Marke'], row['Sorte'], float(row['Menge_ml']), float(row['Alk_Vol']), 1, None, final_lat, final_lon)
             st.write("")
     
     getraenke_df = load_data(SHEET_GETRAENKE_DB)
@@ -893,7 +893,8 @@ def buchung_view():
         )
 
     # Storno Bereich
-    st.subheader("Letzte Buchungen (Storno)")
+    st.write("---")
+    st.write("**Letzte Buchungen (Storno)**")
     logs_df = load_data(SHEET_KONSUM_LOG)
     my_logs = logs_df[logs_df['Username'] == st.session_state.username].copy()
     
@@ -902,20 +903,17 @@ def buchung_view():
         my_logs = my_logs.sort_values(by="Zeitstempel", ascending=False).head(5)
         
         for _, row in my_logs.iterrows():
-            with st.container(border=True):
-                colA, colB = st.columns([3, 1])
-                with colA:
-                    time_str = row['Zeitstempel'].strftime("%H:%M")
-                    st.write(f"**{time_str}** | {row['Marke']} {row['Sorte']}")
-                with colB:
-                    st.markdown("<div class='storno-btn'>", unsafe_allow_html=True)
-                    if st.button("❌ Storno", key=f"storno_{row['Log_ID']}", use_container_width=True):
-                        # Delete from dataframe
-                        logs_df = logs_df[logs_df['Log_ID'] != row['Log_ID']]
-                        save_data(SHEET_KONSUM_LOG, logs_df)
-                        st.toast("Buchung storniert.", icon="🗑️")
-                        st.rerun()
-                    st.markdown("</div>", unsafe_allow_html=True)
+            colA, colB = st.columns([4, 1], vertical_alignment="center")
+            with colA:
+                time_str = row['Zeitstempel'].strftime("%H:%M")
+                st.markdown(f"<p style='margin:0; font-size:14px;'><b>{time_str}</b> | {row['Marke']} {row['Sorte']}</p>", unsafe_allow_html=True)
+            with colB:
+                if st.button("Storno", key=f"storno_{row['Log_ID']}", use_container_width=True):
+                    # Delete from dataframe
+                    logs_df = logs_df[logs_df['Log_ID'] != row['Log_ID']]
+                    save_data(SHEET_KONSUM_LOG, logs_df)
+                    st.toast("Buchung storniert.", icon="🗑️")
+                    st.rerun()
     else:
         st.info("Noch keine Getränke heute gebucht.")
 
