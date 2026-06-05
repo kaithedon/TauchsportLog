@@ -480,9 +480,27 @@ def book_drink_now(marke, sorte, menge, alk_vol, anzahl=1, buchungs_zeit=None):
         })
     logs_df = pd.concat([logs_df, pd.DataFrame(new_logs)], ignore_index=True)
     save_data(SHEET_KONSUM_LOG, logs_df)
-    st.toast(f"{anzahl}x {marke} erfolgreich verbucht!", icon="🍻")
+    st.session_state['show_success_popup'] = True
     st.session_state['last_wa_link'] = generate_whatsapp_link(st.session_state.username, anzahl, marke, sorte)
+    st.session_state['last_booked_label'] = f"{anzahl}x {marke}"
     st.rerun()
+
+@st.dialog("🍻 Prost!")
+def booking_success_popup(wa_link, label):
+    st.markdown(f"""
+    <div style='text-align:center; padding: 1rem 0;'>
+        <div style='font-size: 3rem;'>🎉</div>
+        <h2 style='margin: 0.5rem 0; color: #27ae60;'>Erfolgreich eingebucht!</h2>
+        <p style='color: #aaa; font-size: 1.1rem;'><strong>{label}</strong> wurde verbucht.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    st.divider()
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("❌ Schließen", use_container_width=True):
+            st.rerun()
+    with col2:
+        st.link_button("📲 WhatsApp", wa_link, use_container_width=True, type="primary")
 
 def buchung_view():
     st.title("🍺 Getränke buchen")
@@ -555,10 +573,12 @@ def buchung_view():
                     
                     book_drink_now(marke, sorte, menge, alk_vol, anzahl, buchungs_zeit)
             
-            # WhatsApp Share Button nach Buchung
-            if st.session_state.get('last_wa_link'):
-                wa_link = st.session_state.pop('last_wa_link')
-                st.link_button("📲 In WhatsApp teilen", wa_link, use_container_width=True, type="secondary")
+            # Popup nach Buchung
+            if st.session_state.pop('show_success_popup', False):
+                booking_success_popup(
+                    st.session_state.pop('last_wa_link', '#'),
+                    st.session_state.pop('last_booked_label', 'Getränk')
+                )
 
     with tab2:
         with st.container(border=True):
@@ -592,10 +612,12 @@ def buchung_view():
                     
                     book_drink_now(marke, sorte, menge, alk_vol, anzahl2, buchungs_zeit2)
             
-            # WhatsApp Share Button nach manueller Buchung
-            if st.session_state.get('last_wa_link'):
-                wa_link = st.session_state.pop('last_wa_link')
-                st.link_button("📲 In WhatsApp teilen", wa_link, use_container_width=True, type="secondary")
+            # Popup nach manueller Buchung
+            if st.session_state.pop('show_success_popup', False):
+                booking_success_popup(
+                    st.session_state.pop('last_wa_link', '#'),
+                    st.session_state.pop('last_booked_label', 'Getränk')
+                )
 
     # Storno Bereich
     st.subheader("Letzte Buchungen (Storno)")
