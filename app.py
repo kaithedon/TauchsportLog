@@ -972,6 +972,7 @@ from PIL import Image
 def upload_story_dialog():
     st.write("Zeig allen, was du gerade trinkst!")
     uploaded_file = st.file_uploader("Bild auswählen oder aufnehmen", type=["jpg", "jpeg", "png", "webp"])
+    caption_text = st.text_input("Bildunterschrift (optional)", max_chars=100)
     
     if uploaded_file is not None:
         st.image(uploaded_file, caption="Vorschau", use_column_width=True)
@@ -1001,7 +1002,8 @@ def upload_story_dialog():
                 new_row = pd.DataFrame([{
                     "username": st.session_state.username,
                     "image_data": "data:image/jpeg;base64," + base64_data,
-                    "timestamp": pd.Timestamp.now().isoformat()
+                    "timestamp": pd.Timestamp.now().isoformat(),
+                    "caption": caption_text
                 }])
                 stories_df = pd.concat([stories_df, new_row], ignore_index=True)
                 save_data(SHEET_STORIES, stories_df)
@@ -1031,6 +1033,10 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
     st.markdown(f"<p style='text-align:center; color:gray; font-size:14px;'>Hochgeladen am: {time_formatted} Uhr ({story_idx+1}/{len(user_stories_df)})</p>", unsafe_allow_html=True)
     st.markdown(f'<img src="{image_data}" style="width:100%; border-radius:10px;">', unsafe_allow_html=True)
     
+    caption = story.get('caption', '')
+    if pd.notna(caption) and str(caption).strip() != "":
+        st.markdown(f"<p style='text-align:center; margin-top:10px; font-weight:bold;'>{caption}</p>", unsafe_allow_html=True)
+        
     st.write("")
     col1, col2, col3 = st.columns([1, 2, 1])
     
@@ -1047,6 +1053,25 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                     st.query_params["story_idx"] = "last"
             st.rerun()
             
+    with col2:
+        if username == st.session_state.username:
+            if st.button("🗑️ Löschen", use_container_width=True, type="secondary"):
+                stories_df = load_data(SHEET_STORIES)
+                drop_mask = (stories_df['username'] == username) & (stories_df['timestamp'] == story['timestamp'])
+                drop_idx = stories_df[drop_mask].index
+                if not drop_idx.empty:
+                    stories_df = stories_df.drop(drop_idx)
+                    save_data(SHEET_STORIES, stories_df)
+                    st.success("Story gelöscht!")
+                    
+                    del st.query_params["view_story"]
+                    if "story_idx" in st.query_params:
+                        del st.query_params["story_idx"]
+                        
+                    import time
+                    time.sleep(1)
+                    st.rerun()
+                    
     with col3:
         if st.button("▶", use_container_width=True):
             if story_idx < len(user_stories_df) - 1:
