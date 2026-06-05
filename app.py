@@ -1198,23 +1198,24 @@ def upload_story_dialog():
                 if img.mode != 'RGB':
                     img = img.convert('RGB')
                     
-                quality = 80
-                max_size = 800
+                quality = 70
+                max_size = 600
                 base64_data = ""
-                # 2. Compress until it fits
+                # 2. Compress until it fits comfortably in a Google Sheets cell
+                img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
                 while True:
                     buffer = io.BytesIO()
                     img.save(buffer, format="JPEG", quality=quality)
                     base64_data = base64.b64encode(buffer.getvalue()).decode()
-                    if len(base64_data) < 45000:
+                    if len(base64_data) < 35000:
                         break
                     if quality > 20:
                         quality -= 15
                     else:
                         # Shrink image dimension if quality reduction isn't enough
-                        max_size = int(max_size * 0.75)
+                        max_size = int(max_size * 0.8)
                         img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
-                        quality = 60
+                        quality = 50
                 
                 
                 stories_df = load_data(SHEET_STORIES)
