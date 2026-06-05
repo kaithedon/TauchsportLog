@@ -1120,6 +1120,50 @@ def admin_view():
                         "Standard_Menge_ml": d["Menge"]
                     })
             
+            # Cocktails hinzufügen
+            neue_cocktails = [
+                {"Marke": "Caipirinha", "Sorte": "Cocktail (0.3l)", "Vol": 12.0, "Menge": 300},
+                {"Marke": "Mojito", "Sorte": "Cocktail (0.3l)", "Vol": 12.0, "Menge": 300},
+                {"Marke": "Long Island Iced Tea", "Sorte": "Cocktail-Stark (0.35l)", "Vol": 20.0, "Menge": 350},
+                {"Marke": "Piña Colada", "Sorte": "Cocktail-Sahne (0.4l)", "Vol": 10.0, "Menge": 400},
+                {"Marke": "Sex on the Beach", "Sorte": "Cocktail (0.3l)", "Vol": 10.0, "Menge": 300},
+                {"Marke": "Tequila Sunrise", "Sorte": "Cocktail (0.3l)", "Vol": 11.0, "Menge": 300},
+                {"Marke": "Zombie", "Sorte": "Cocktail-Stark (0.35l)", "Vol": 18.0, "Menge": 350},
+                {"Marke": "Swimming Pool", "Sorte": "Cocktail (0.4l)", "Vol": 10.0, "Menge": 400},
+                {"Marke": "Cuba Libre", "Sorte": "Cocktail (0.3l)", "Vol": 12.5, "Menge": 300},
+                {"Marke": "Mai Tai", "Sorte": "Cocktail-Stark (0.3l)", "Vol": 17.0, "Menge": 300}
+            ]
+            new_drinks.extend([{
+                "Marke": c["Marke"],
+                "Sorte": c["Sorte"],
+                "Alkoholgehalt_Vol": round(c["Vol"], 2),
+                "Standard_Menge_ml": c["Menge"]
+            } for c in neue_cocktails])
+            
+            # Fertige Longdrinks hinzufügen
+            fertige_longdrinks = [
+                {"Marke": "Wodka Lemon", "Sorte": "Longdrink (0.3l)", "Vol": 5.0, "Menge": 300},
+                {"Marke": "Wodka Orangensaft (Wodka O)", "Sorte": "Longdrink (0.3l)", "Vol": 5.0, "Menge": 300},
+                {"Marke": "Wodka Energy", "Sorte": "Longdrink (0.25l)", "Vol": 6.0, "Menge": 250},
+                {"Marke": "Bacardi Cola", "Sorte": "Longdrink (0.3l)", "Vol": 5.0, "Menge": 300},
+                {"Marke": "Whiskey Cola (Charly)", "Sorte": "Longdrink (0.3l)", "Vol": 5.3, "Menge": 300},
+                {"Marke": "Gin Tonic", "Sorte": "Longdrink (0.25l)", "Vol": 6.0, "Menge": 250},
+                {"Marke": "Korn Fanta", "Sorte": "Longdrink (0.3l)", "Vol": 4.3, "Menge": 300},
+                {"Marke": "Korn Cola", "Sorte": "Longdrink (0.3l)", "Vol": 4.3, "Menge": 300},
+                {"Marke": "Asbach Cola", "Sorte": "Longdrink (0.3l)", "Vol": 5.1, "Menge": 300},
+                {"Marke": "Campari Orange", "Sorte": "Longdrink (0.3l)", "Vol": 3.3, "Menge": 300},
+                {"Marke": "Licor 43 mit Milch (Blond Angel)", "Sorte": "Longdrink (0.3l)", "Vol": 4.1, "Menge": 300},
+                {"Marke": "Jägermeister Cola", "Sorte": "Longdrink (0.3l)", "Vol": 4.7, "Menge": 300},
+                {"Marke": "Malibu Kirsch", "Sorte": "Longdrink (0.3l)", "Vol": 2.8, "Menge": 300},
+                {"Marke": "Pernod Cola", "Sorte": "Longdrink (0.3l)", "Vol": 5.3, "Menge": 300}
+            ]
+            new_drinks.extend([{
+                "Marke": l["Marke"],
+                "Sorte": l["Sorte"],
+                "Alkoholgehalt_Vol": round(l["Vol"], 2),
+                "Standard_Menge_ml": l["Menge"]
+            } for l in fertige_longdrinks])
+            
             df = load_data(SHEET_GETRAENKE_DB)
             df_new = pd.DataFrame(new_drinks)
             df_combined = pd.concat([df, df_new], ignore_index=True)
