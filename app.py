@@ -783,12 +783,16 @@ def buchung_view():
                                 book_drink_now(row['Marke'], row['Sorte'], float(row['Standard_Menge_ml']), float(row['Alkoholgehalt_Vol']), anzahl_sc, get_now_berlin(), final_lat, final_lon)
                         else:
                             st.warning("Getränk nicht in lokaler Datenbank.")
-                            product_data = fetch_open_food_facts(barcode)
+                            with st.spinner("Suche in globaler Datenbank (Open Food Facts)..."):
+                                product_data = fetch_open_food_facts(barcode)
+                                
                             if product_data:
-                                st.info(f"Online gefunden: **{product_data['marke']} {product_data['sorte']}**")
+                                st.info(f"🌐 Online gefunden: **{product_data['marke']} {product_data['sorte']}**")
+                            else:
+                                st.error("🌐 Auch online leider unbekannt.")
                             
-                            st.write("Möchtest du dieses Getränk in die Datenbank aufnehmen?")
-                            if st.button("Getränk mit gescanntem Barcode erstellen", use_container_width=True):
+                            st.write("Möchtest du dieses Getränk manuell anlegen?")
+                            if st.button("Getränk mit gescanntem Barcode anlegen", use_container_width=True):
                                 st.session_state.prefill_barcode = barcode
                                 if product_data:
                                     st.session_state.prefill_marke = product_data['marke']
