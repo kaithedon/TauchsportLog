@@ -9,11 +9,8 @@ import uuid
 import base64
 import io
 from PIL import Image
-from streamlit_cookies_controller import CookieController
 from streamlit_option_menu import option_menu
 from tenacity import retry, wait_exponential, stop_after_attempt
-
-cookie_controller = CookieController()
 
 # --- PAGE CONFIG ---
 st.set_page_config(
@@ -444,16 +441,17 @@ def login_view():
     with tab1:
         with st.container(border=True):
             st.subheader("Login")
-            l_user = st.text_input("Username", key="l_user")
-            l_pass = st.text_input("Passwort", type="password", key="l_pass")
-            if st.button("Einloggen", use_container_width=True):
-                if login_user(l_user, l_pass):
-                    cookie_controller.set('tsc_user', l_user)
-                    cookie_controller.set('tsc_hash', hash_password(l_pass))
-                    st.rerun()
-                else:
-                    st.error("Falscher Username oder Passwort.")
-                    
+            with st.form("login_form"):
+                l_user = st.text_input("Username", key="l_user", autocomplete="username")
+                l_pass = st.text_input("Passwort", type="password", key="l_pass", autocomplete="current-password")
+                submitted = st.form_submit_button("Einloggen", use_container_width=True)
+                if submitted:
+                    if login_user(l_user, l_pass):
+                        st.query_params["user"] = l_user
+                        st.query_params["hash"] = hash_password(l_pass)
+                        st.rerun()
+                    else:
+                        st.error("Falscher Username oder Passwort.")
     with tab2:
         with st.container(border=True):
             st.subheader("Neuer Taucher")
@@ -894,9 +892,9 @@ def profil_view():
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
     
-    # Try autologin via cookies
-    saved_user = cookie_controller.get('tsc_user')
-    saved_hash = cookie_controller.get('tsc_hash')
+    # Try autologin via secure URL parameters
+    saved_user = st.query_params.get("user")
+    saved_hash = st.query_params.get("hash")
     if saved_user and saved_hash:
         login_user(saved_user, saved_hash, is_hashed=True)
 
@@ -914,8 +912,10 @@ else:
         st.write(f"Willkommen, **{st.session_state.username}** 🤿")
     with col_logout:
         if st.button("Logout", use_container_width=True):
-            cookie_controller.remove('tsc_user')
-            cookie_controller.remove('tsc_hash')
+            if "user" in st.query_params:
+                del st.query_params["user"]
+            if "hash" in st.query_params:
+                del st.query_params["hash"]
             st.session_state.logged_in = False
             st.rerun()
             
