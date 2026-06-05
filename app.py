@@ -1092,6 +1092,10 @@ def render_stories_bar():
         '''
         
     html += '</div>'
+    
+    # Remove newlines to prevent Streamlit from rendering indented lines as Markdown code blocks
+    html = html.replace('\n', '')
+    
     st.markdown(html, unsafe_allow_html=True)
 
 def social_view():
