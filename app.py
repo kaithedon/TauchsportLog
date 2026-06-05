@@ -1048,6 +1048,26 @@ def render_stories_bar():
         active_stories = stories_df[stories_df['timestamp'] >= (now - pd.Timedelta(hours=48))]
         active_users = set(active_stories['username'].unique())
 
+    import urllib.parse
+    q_params = dict(st.query_params)
+    
+    q_params_upload = q_params.copy()
+    q_params_upload["upload_story"] = "true"
+    upload_link = "?" + urllib.parse.urlencode(q_params_upload)
+
+    # Calculate who is currently active (drank in the last 30 minutes)
+    logs_df = load_data(SHEET_KONSUM_LOG)
+    drunk_users = set()
+    if not logs_df.empty:
+        logs_df['Zeitstempel'] = pd.to_datetime(logs_df['Zeitstempel'])
+        now_time = pd.Timestamp.now()
+        for u in users_df['Username']:
+            u_logs = logs_df[logs_df['Username'] == u]
+            if not u_logs.empty:
+                last_drink = u_logs['Zeitstempel'].max()
+                if (now_time - last_drink).total_seconds() <= 30 * 60:
+                    drunk_users.add(u)
+
     html = '<div style="display: flex; overflow-x: auto; padding: 10px 0; gap: 15px; border-bottom: 1px solid #333; margin-bottom: 15px;">'
     
     # 1. Current User (with Plus Icon)
@@ -1056,38 +1076,42 @@ def render_stories_bar():
         my_pic = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
         
     my_ring = "border: 3px solid #39ff14; padding: 2px;" if st.session_state.username in active_users else "border: 2px solid #555; padding: 2px;"
+    my_dot = "🟢" if st.session_state.username in drunk_users else "🔴"
     
     html += f'''
-    <a href="?upload_story=true" target="_self" style="text-decoration: none; position: relative; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
+    <a href="{upload_link}" target="_self" style="text-decoration: none; position: relative; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
         <div style="position: relative;">
             <img src="{my_pic}" style="width: 65px; height: 65px; border-radius: 50%; object-fit: cover; {my_ring}">
             <div style="position: absolute; bottom: 0; right: 0; background: #ff4b4b; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; border: 2px solid #0e1117;">+</div>
         </div>
-        <div style="text-align: center; font-size: 12px; color: #ccc; margin-top: 5px; width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Du</div>
+        <div style="text-align: center; font-size: 12px; color: #ccc; margin-top: 5px; width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{my_dot} Du</div>
     </a>
     '''
     
-    # 2. Other Users (Active stories first, then inactive)
-    other_users = users_df[users_df['Username'] != st.session_state.username].copy()
-    
-    # Sort: active first
-    other_users['has_story'] = other_users['Username'].apply(lambda u: 1 if u in active_users else 0)
-    other_users = other_users.sort_values(by=['has_story', 'Username'], ascending=[False, True])
+    # 2. Other Users (Only show if they have a story)
+    other_users = users_df[users_df['Username'] != st.session_state.username]
     
     for _, row in other_users.iterrows():
         uname = row['Username']
+        if uname not in active_users:
+            continue
+            
         pic = row['Profilbild_Url']
         if not pic.startswith("data:image"):
             pic = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
             
-        has_story = uname in active_users
-        ring_style = "border: 3px solid #39ff14; padding: 2px;" if has_story else "border: 2px solid #555; padding: 2px; opacity: 0.6;"
-        link = f"?view_story={uname}" if has_story else "#"
+        ring_style = "border: 3px solid #39ff14; padding: 2px;"
+        
+        q_params_view = q_params.copy()
+        q_params_view["view_story"] = uname
+        link = "?" + urllib.parse.urlencode(q_params_view)
+        
+        status_dot = "🟢" if uname in drunk_users else "🔴"
         
         html += f'''
         <a href="{link}" target="_self" style="text-decoration: none; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
             <img src="{pic}" style="width: 65px; height: 65px; border-radius: 50%; object-fit: cover; {ring_style}">
-            <div style="text-align: center; font-size: 12px; color: #ccc; margin-top: 5px; width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{uname}</div>
+            <div style="text-align: center; font-size: 12px; color: #ccc; margin-top: 5px; width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{status_dot} {uname}</div>
         </a>
         '''
         
