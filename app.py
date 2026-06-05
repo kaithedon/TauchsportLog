@@ -458,13 +458,19 @@ def login_view():
 def generate_whatsapp_link(username, anzahl, marke, sorte, nr_heute, nr_jahr):
     """Generiert einen wa.me-Link mit vorformulierter, sauber formatierter Nachricht."""
     import urllib.parse
+    # Visuelle Darstellung: bis zu 10 Bier-Emojis für heute
+    if nr_heute <= 10:
+        heute_visual = "🍺" * nr_heute
+    else:
+        heute_visual = "🍺" * 10 + f" +{nr_heute - 10}"
     msg = (
         f"🍺 {username} hat gerade eingecheckt\n"
         f"\n"
         f"*{anzahl}x {marke}*\n"
         f"_{sorte}_\n"
         f"\n"
-        f"Getränk Nr. {nr_heute} heute · Nr. {nr_jahr} dieses Jahr"
+        f"Heute: {heute_visual}\n"
+        f"{datetime.datetime.now().year}: {nr_jahr} Bier insgesamt"
     )
     encoded = urllib.parse.quote(msg)
     return f"https://wa.me/?text={encoded}"
