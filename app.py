@@ -596,8 +596,19 @@ def buchung_view():
         if location:
             import json
             coords = json.loads(location)
-            final_lat = coords.get("lat")
-            final_lon = coords.get("lon")
+            st.session_state['cached_lat'] = coords.get("lat")
+            st.session_state['cached_lon'] = coords.get("lon")
+        
+        # Immer aus Cache lesen (überlebt Reruns)
+        final_lat = st.session_state.get('cached_lat')
+        final_lon = st.session_state.get('cached_lon')
+        
+        if final_lat and final_lon:
+            st.caption(f"📡 Koordinaten erfasst: {final_lat:.4f}, {final_lon:.4f}")
+    else:
+        # GPS deaktiviert → Cache leeren
+        st.session_state.pop('cached_lat', None)
+        st.session_state.pop('cached_lon', None)
     
     # QUICK ACCESS
     logs_df = load_data(SHEET_KONSUM_LOG)
@@ -755,7 +766,7 @@ def statistik_view():
     stats_data = []
     for _, user_row in users_df.iterrows():
         uname = user_row['Username']
-        user_logs = logs_df[logs_df['Username'] == uname]
+        user_logs = logs_df[logs_df['Username'] == uname].copy()
         
         gesamt_getraenke = len(user_logs)
         if gesamt_getraenke == 0:
@@ -764,7 +775,7 @@ def statistik_view():
         total_ml = pd.to_numeric(user_logs['Menge_ml'], errors='coerce').sum()
         gesamt_liter = round(total_ml / 1000, 2)
         
-        user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
+        user_logs.loc[:, 'Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
         now = pd.Timestamp.now()
         first_drink_date = user_logs['Zeitstempel'].min()
         days_active = (now - first_drink_date).days + 1
