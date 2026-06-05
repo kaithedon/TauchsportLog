@@ -103,6 +103,8 @@ def generate_master_drinks():
     ]
 
     Apfelwein_Marken = ["Possmann", "Bembel-with-Care", "Rapp's", "Höhl", "Heil"]
+    Apfelwein_Marken.append("Apfelwein (Standard / Hausmarke)")
+    
     Apfelwein_Sorten = [
         {"Sorte": "Pur (0.5l)", "Vol": 5.5, "Menge": 500},
         {"Sorte": "Sauergespratzt (0.5l)", "Vol": 4.0, "Menge": 500},
