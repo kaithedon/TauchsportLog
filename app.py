@@ -776,13 +776,20 @@ def social_view():
                     else:
                         img_html = f'<span style="font-size: 25px; margin-right: 5px;">{pic}</span>'
                         
-                    st.markdown(f'<div style="display:flex; align-items:center; margin-bottom: 8px;">{img_html}<strong style="font-size:1.2em;">{uname}</strong></div>', unsafe_allow_html=True)
-                    
+                    is_active = False
                     if not user_logs.empty:
                         user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
                         last_drink_time = user_logs['Zeitstempel'].max()
                         now = pd.Timestamp.now()
                         diff = now - last_drink_time
+                        if diff.total_seconds() <= 30 * 60:
+                            is_active = True
+                            
+                    status_badge = '<span style="color: #28a745; font-size: 0.75em; margin-left: auto; font-weight: bold;">🟢 Aktiv</span>' if is_active else '<span style="color: #6c757d; font-size: 0.75em; margin-left: auto;">⚪ Inaktiv</span>'
+                        
+                    st.markdown(f'<div style="display:flex; align-items:center; margin-bottom: 8px;">{img_html}<strong style="font-size:1.2em;">{uname}</strong>{status_badge}</div>', unsafe_allow_html=True)
+                    
+                    if not user_logs.empty:
                         days = diff.days
                         hours = diff.seconds // 3600
                         minutes = (diff.seconds % 3600) // 60
