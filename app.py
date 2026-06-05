@@ -480,57 +480,105 @@ def buchung_view():
     
     getraenke_df = load_data(SHEET_GETRAENKE_DB)
     drink_options = getraenke_df.apply(lambda r: f"{r['Marke']} {r['Sorte']} ({r['Standard_Menge_ml']}ml)", axis=1).tolist()
-    drink_options.append("Anderes Getränk (Manuell)")
     
-    with st.container(border=True):
-        selected_option = st.selectbox("Was trinkst du?", drink_options)
-        
-        # Manual entry logic
-        if selected_option == "Anderes Getränk (Manuell)":
+    tab1, tab2 = st.tabs(["🍻 Aus Datenbank wählen", "➕ Eigenes Getränk anlegen"])
+    
+    with tab1:
+        with st.container(border=True):
+            st.write("**Schnellsuche:**")
+            search_term = st.text_input("🔍 Suche nach Marke oder Sorte (z.B. Licher, Wodka...)", key="search_drink")
+            
+            filtered_options = drink_options
+            if search_term:
+                filtered_options = [d for d in drink_options if search_term.lower() in d.lower()]
+                
+            selected_option = st.selectbox("Was trinkst du?", filtered_options)
+            
+            anzahl = st.number_input("Anzahl", min_value=1, max_value=10, value=1, key="anz_db")
+            
+            mode = st.radio("Zeitpunkt", ["Jetzt live einbuchen", "Nachtragen"], key="mode_db")
+            buchungs_zeit = datetime.datetime.now()
+            if mode == "Nachtragen":
+                manual_time = st.time_input("Uhrzeit auswählen", key="time_db")
+                buchungs_zeit = datetime.datetime.combine(datetime.date.today(), manual_time)
+                if buchungs_zeit > datetime.datetime.now():
+                    buchungs_zeit -= datetime.timedelta(days=1)
+                    
+            if st.button("Einlochen 🎯", use_container_width=True, key="btn_db"):
+                if not selected_option:
+                    st.error("Bitte wähle ein Getränk aus.")
+                else:
+                    idx = drink_options.index(selected_option)
+                    row = getraenke_df.iloc[idx]
+                    marke = row['Marke']
+                    sorte = row['Sorte']
+                    menge = row['Standard_Menge_ml']
+                    alk_vol = row['Alkoholgehalt_Vol']
+                    
+                    logs_df = load_data(SHEET_KONSUM_LOG)
+                    new_logs = []
+                    for _ in range(anzahl):
+                        new_logs.append({
+                            "Log_ID": str(uuid.uuid4()),
+                            "Zeitstempel": buchungs_zeit.strftime("%Y-%m-%d %H:%M:%S"),
+                            "Username": st.session_state.username,
+                            "Marke": marke,
+                            "Sorte": sorte,
+                            "Menge_ml": menge,
+                            "Alk_Vol": alk_vol
+                        })
+                    
+                    logs_df = pd.concat([logs_df, pd.DataFrame(new_logs)], ignore_index=True)
+                    save_data(SHEET_KONSUM_LOG, logs_df)
+                    st.toast(f"{anzahl}x {marke} erfolgreich verbucht!", icon="🍻")
+                    st.rerun()
+
+    with tab2:
+        with st.container(border=True):
+            st.write("Ist dein Getränk nicht in der Liste? Lege es hier einmalig an:")
             col1, col2 = st.columns(2)
             with col1:
-                marke = st.text_input("Marke/Name")
-                menge = st.number_input("Menge (ml)", min_value=10, max_value=2000, step=10, value=330)
+                marke = st.text_input("Marke/Name", key="m_marke")
+                menge = st.number_input("Menge (ml)", min_value=10, max_value=2000, step=10, value=330, key="m_menge")
             with col2:
                 sorte = "Manuell"
-                alk_vol = st.number_input("Alkoholgehalt (Vol%)", min_value=0.0, max_value=100.0, step=0.1, value=5.0)
-        else:
-            idx = drink_options.index(selected_option)
-            row = getraenke_df.iloc[idx]
-            marke = row['Marke']
-            sorte = row['Sorte']
-            menge = row['Standard_Menge_ml']
-            alk_vol = row['Alkoholgehalt_Vol']
-            
-        anzahl = st.number_input("Anzahl", min_value=1, max_value=10, value=1)
-        
-        mode = st.radio("Zeitpunkt", ["Jetzt live einbuchen", "Nachtragen"])
-        buchungs_zeit = datetime.datetime.now()
-        if mode == "Nachtragen":
-            manual_time = st.time_input("Uhrzeit auswählen")
-            buchungs_zeit = datetime.datetime.combine(datetime.date.today(), manual_time)
-            if buchungs_zeit > datetime.datetime.now():
-                buchungs_zeit -= datetime.timedelta(days=1) # Assume yesterday if time is in future
+                alk_vol = st.number_input("Alkoholgehalt (Vol%)", min_value=0.0, max_value=100.0, step=0.1, value=5.0, key="m_alk")
                 
-        if st.button("Einlochen 🎯", use_container_width=True):
-            logs_df = load_data(SHEET_KONSUM_LOG)
-            new_logs = []
-            for _ in range(anzahl):
-                new_logs.append({
-                    "Log_ID": str(uuid.uuid4()),
-                    "Zeitstempel": buchungs_zeit.strftime("%Y-%m-%d %H:%M:%S"),
-                    "Username": st.session_state.username,
-                    "Marke": marke,
-                    "Sorte": sorte,
-                    "Menge_ml": menge,
-                    "Alk_Vol": alk_vol
-                })
-            
-            new_logs_df = pd.DataFrame(new_logs)
-            logs_df = pd.concat([logs_df, new_logs_df], ignore_index=True)
-            save_data(SHEET_KONSUM_LOG, logs_df)
-            st.toast(f"{anzahl}x {marke} erfolgreich verbucht!", icon="🍻")
-            st.rerun()
+            anzahl2 = st.number_input("Anzahl", min_value=1, max_value=10, value=1, key="anz_m")
+            mode2 = st.radio("Zeitpunkt", ["Jetzt live einbuchen", "Nachtragen"], key="mode_m")
+            buchungs_zeit2 = datetime.datetime.now()
+            if mode2 == "Nachtragen":
+                manual_time2 = st.time_input("Uhrzeit auswählen", key="time_m")
+                buchungs_zeit2 = datetime.datetime.combine(datetime.date.today(), manual_time2)
+                if buchungs_zeit2 > datetime.datetime.now():
+                    buchungs_zeit2 -= datetime.timedelta(days=1)
+                    
+            if st.button("Trinken & für alle Speichern 🎯", use_container_width=True, key="btn_m"):
+                if not marke:
+                    st.error("Bitte eine Marke/einen Namen eintragen.")
+                else:
+                    new_drink = pd.DataFrame([{
+                        "Marke": marke, "Sorte": sorte, "Alkoholgehalt_Vol": alk_vol, "Standard_Menge_ml": menge
+                    }])
+                    getraenke_df = pd.concat([getraenke_df, new_drink], ignore_index=True)
+                    save_data(SHEET_GETRAENKE_DB, getraenke_df)
+                    
+                    logs_df = load_data(SHEET_KONSUM_LOG)
+                    new_logs = []
+                    for _ in range(anzahl2):
+                        new_logs.append({
+                            "Log_ID": str(uuid.uuid4()),
+                            "Zeitstempel": buchungs_zeit2.strftime("%Y-%m-%d %H:%M:%S"),
+                            "Username": st.session_state.username,
+                            "Marke": marke,
+                            "Sorte": sorte,
+                            "Menge_ml": menge,
+                            "Alk_Vol": alk_vol
+                        })
+                    logs_df = pd.concat([logs_df, pd.DataFrame(new_logs)], ignore_index=True)
+                    save_data(SHEET_KONSUM_LOG, logs_df)
+                    st.toast(f"{anzahl2}x {marke} erfolgreich verbucht und gespeichert!", icon="🍻")
+                    st.rerun()
 
     # Storno Bereich
     st.subheader("Letzte Buchungen (Storno)")
