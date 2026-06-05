@@ -475,8 +475,43 @@ def login_view():
                 else:
                     st.error("Bitte alle Pflichtfelder ausfüllen.")
 
+def book_drink_now(marke, sorte, menge, alk_vol, anzahl=1, buchungs_zeit=None):
+    if buchungs_zeit is None:
+        buchungs_zeit = datetime.datetime.now()
+    logs_df = load_data(SHEET_KONSUM_LOG)
+    new_logs = []
+    for _ in range(anzahl):
+        new_logs.append({
+            "Log_ID": str(uuid.uuid4()),
+            "Zeitstempel": buchungs_zeit.strftime("%Y-%m-%d %H:%M:%S"),
+            "Username": st.session_state.username,
+            "Marke": marke,
+            "Sorte": sorte,
+            "Menge_ml": menge,
+            "Alk_Vol": alk_vol
+        })
+    logs_df = pd.concat([logs_df, pd.DataFrame(new_logs)], ignore_index=True)
+    save_data(SHEET_KONSUM_LOG, logs_df)
+    st.toast(f"{anzahl}x {marke} erfolgreich verbucht!", icon="🍻")
+    st.rerun()
+
 def buchung_view():
     st.title("🍺 Getränke buchen")
+    
+    # QUICK ACCESS
+    logs_df = load_data(SHEET_KONSUM_LOG)
+    my_logs = logs_df[logs_df['Username'] == st.session_state.username]
+    if not my_logs.empty:
+        # Get last 5 unique drinks
+        recent = my_logs.drop_duplicates(subset=['Marke', 'Sorte'], keep='last').tail(5)
+        if not recent.empty:
+            st.write("**⚡ Quick-Booking (Nochmal das Gleiche):**")
+            cols = st.columns(len(recent))
+            for idx, (_, row) in enumerate(recent.iterrows()):
+                with cols[idx]:
+                    if st.button(f"{row['Marke']}\n{row['Sorte']}", key=f"qb_{row['Log_ID']}", use_container_width=True):
+                        book_drink_now(row['Marke'], row['Sorte'], float(row['Menge_ml']), float(row['Alk_Vol']))
+            st.divider()
     
     getraenke_df = load_data(SHEET_GETRAENKE_DB)
     drink_options = getraenke_df.apply(lambda r: f"{r['Marke']} {r['Sorte']} ({r['Standard_Menge_ml']}ml)", axis=1).tolist()
@@ -515,23 +550,7 @@ def buchung_view():
                     menge = row['Standard_Menge_ml']
                     alk_vol = row['Alkoholgehalt_Vol']
                     
-                    logs_df = load_data(SHEET_KONSUM_LOG)
-                    new_logs = []
-                    for _ in range(anzahl):
-                        new_logs.append({
-                            "Log_ID": str(uuid.uuid4()),
-                            "Zeitstempel": buchungs_zeit.strftime("%Y-%m-%d %H:%M:%S"),
-                            "Username": st.session_state.username,
-                            "Marke": marke,
-                            "Sorte": sorte,
-                            "Menge_ml": menge,
-                            "Alk_Vol": alk_vol
-                        })
-                    
-                    logs_df = pd.concat([logs_df, pd.DataFrame(new_logs)], ignore_index=True)
-                    save_data(SHEET_KONSUM_LOG, logs_df)
-                    st.toast(f"{anzahl}x {marke} erfolgreich verbucht!", icon="🍻")
-                    st.rerun()
+                    book_drink_now(marke, sorte, menge, alk_vol, anzahl, buchungs_zeit)
 
     with tab2:
         with st.container(border=True):
@@ -563,22 +582,7 @@ def buchung_view():
                     getraenke_df = pd.concat([getraenke_df, new_drink], ignore_index=True)
                     save_data(SHEET_GETRAENKE_DB, getraenke_df)
                     
-                    logs_df = load_data(SHEET_KONSUM_LOG)
-                    new_logs = []
-                    for _ in range(anzahl2):
-                        new_logs.append({
-                            "Log_ID": str(uuid.uuid4()),
-                            "Zeitstempel": buchungs_zeit2.strftime("%Y-%m-%d %H:%M:%S"),
-                            "Username": st.session_state.username,
-                            "Marke": marke,
-                            "Sorte": sorte,
-                            "Menge_ml": menge,
-                            "Alk_Vol": alk_vol
-                        })
-                    logs_df = pd.concat([logs_df, pd.DataFrame(new_logs)], ignore_index=True)
-                    save_data(SHEET_KONSUM_LOG, logs_df)
-                    st.toast(f"{anzahl2}x {marke} erfolgreich verbucht und gespeichert!", icon="🍻")
-                    st.rerun()
+                    book_drink_now(marke, sorte, menge, alk_vol, anzahl2, buchungs_zeit2)
 
     # Storno Bereich
     st.subheader("Letzte Buchungen (Storno)")
