@@ -1070,7 +1070,8 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                 st.rerun()
             
     with col2:
-        if st.button(like_text, type="primary" if i_liked else "secondary", use_container_width=True, key=f"like_btn_{username}_{story_idx}_{len(liked_by)}"):
+        # Use a STATIC key so Streamlit doesn't destroy the widget and force a full app rerun!
+        if st.button(like_text, type="primary" if i_liked else "secondary", use_container_width=True, key=f"like_btn_{username}_{story_idx}"):
             if i_liked:
                 liked_by.remove(st.session_state.username)
             else:
@@ -1080,27 +1081,35 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
             if 'likes' not in stories_df.columns:
                 stories_df['likes'] = ""
                 
-            img_prefix = story['image_data'][:100]
-            match_idx = stories_df[(stories_df['username'] == username) & (stories_df['image_data'].str.startswith(img_prefix))].index
+            # Match by username and normalized timestamp (YYYY-MM-DD HH:MM:SS)
+            target_ts = str(story['timestamp']).replace('T', ' ')[:19]
+            stories_df['norm_ts'] = stories_df['timestamp'].apply(lambda x: str(x).replace('T', ' ')[:19])
+            
+            match_idx = stories_df[(stories_df['username'] == username) & (stories_df['norm_ts'] == target_ts)].index
             
             if not match_idx.empty:
                 new_likes_str = ",".join(liked_by)
                 stories_df.at[match_idx[0], 'likes'] = new_likes_str
+                stories_df = stories_df.drop(columns=['norm_ts'])
                 save_data(SHEET_STORIES, stories_df)
-                
                 user_stories_df.at[user_stories_df.index[story_idx], 'likes'] = new_likes_str
 
     if is_own_story:
         with col_del:
             if st.button("🗑️", help="Story löschen", use_container_width=True, key=f"del_btn_{username}_{story_idx}"):
-                with st.spinner("..."):
+                with st.spinner("Lösche..."):
                     stories_df = load_data(SHEET_STORIES)
-                    img_prefix = story['image_data'][:100]
-                    drop_mask = (stories_df['username'] == username) & (stories_df['image_data'].str.startswith(img_prefix))
+                    
+                    # Match by username and normalized timestamp (YYYY-MM-DD HH:MM:SS)
+                    target_ts = str(story['timestamp']).replace('T', ' ')[:19]
+                    stories_df['norm_ts'] = stories_df['timestamp'].apply(lambda x: str(x).replace('T', ' ')[:19])
+                    
+                    drop_mask = (stories_df['username'] == username) & (stories_df['norm_ts'] == target_ts)
                     drop_idx = stories_df[drop_mask].index
                     
                     if not drop_idx.empty:
                         stories_df = stories_df.drop(drop_idx)
+                        stories_df = stories_df.drop(columns=['norm_ts'])
                         save_data(SHEET_STORIES, stories_df)
                         st.success("Gelöscht!")
                         
