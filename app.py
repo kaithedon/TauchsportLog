@@ -509,7 +509,17 @@ def buchung_view():
             
             filtered_options = drink_options
             if search_term:
-                filtered_options = [d for d in drink_options if search_term.lower() in d.lower()]
+                search_tokens = search_term.lower().split()
+                search_nospace = search_term.lower().replace(" ", "")
+                
+                filtered_options = []
+                for d in drink_options:
+                    d_lower = d.lower()
+                    d_nospace = d_lower.replace(" ", "")
+                    # Match if ALL words are in the string (e.g. "paul weiz" -> "Paulaner Weizen")
+                    # OR if the string without spaces matches (e.g. "brewdog" -> "Brew Dog")
+                    if all(t in d_lower for t in search_tokens) or (search_nospace in d_nospace):
+                        filtered_options.append(d)
                 
             selected_option = st.selectbox("Was trinkst du?", filtered_options)
             
