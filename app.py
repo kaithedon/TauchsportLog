@@ -277,7 +277,7 @@ def get_worksheet(sheet_name):
         return sheet.add_worksheet(title=sheet_name, rows="1000", cols="20")
 
 @retry(wait=wait_exponential(multiplier=1, min=1, max=10), stop=stop_after_attempt(5))
-def load_data(sheet_name):
+def _fetch_from_google(sheet_name):
     ws = get_worksheet(sheet_name)
     # Read everything into a dataframe
     # Drop rows where all elements are NaN
@@ -289,11 +289,19 @@ def load_data(sheet_name):
         
     return df
 
+@st.cache_data(ttl=15)
+def _load_data_internal(sheet_name):
+    return _fetch_from_google(sheet_name)
+
+def load_data(sheet_name):
+    return _load_data_internal(sheet_name).copy()
+
 @retry(wait=wait_exponential(multiplier=1, min=1, max=10), stop=stop_after_attempt(5))
 def save_data(sheet_name, df):
     ws = get_worksheet(sheet_name)
     ws.clear()
     set_with_dataframe(ws, df, include_index=False)
+    _load_data_internal.clear()
 
 def init_db():
     # Initialize all sheets
