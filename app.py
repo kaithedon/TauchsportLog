@@ -66,13 +66,15 @@ SHEET_GETRAENKE_DB = "Getraenke_DB"
 SHEET_KONSUM_LOG = "Konsum_Log"
 SHEET_GLOBALE_STATS = "Globale_Stats"
 SHEET_BACKUP_HISTORY = "Backup_History"
+SHEET_ACTIVATION_CODES = "Activation_Codes"
 
 COLUMNS = {
     SHEET_USER_DB: ["Username", "Password_Hash", "Gewicht_kg", "Groesse_cm", "Geschlecht", "Rolle", "Profilbild_Url"],
     SHEET_GETRAENKE_DB: ["Marke", "Sorte", "Alkoholgehalt_Vol", "Standard_Menge_ml"],
     SHEET_KONSUM_LOG: ["Log_ID", "Zeitstempel", "Username", "Marke", "Sorte", "Menge_ml", "Alk_Vol"],
     SHEET_GLOBALE_STATS: ["Key", "Value"],
-    SHEET_BACKUP_HISTORY: ["Backup_Zeitstempel", "Log_ID", "Zeitstempel", "Username", "Marke", "Sorte", "Menge_ml", "Alk_Vol"]
+    SHEET_BACKUP_HISTORY: ["Backup_Zeitstempel", "Log_ID", "Zeitstempel", "Username", "Marke", "Sorte", "Menge_ml", "Alk_Vol"],
+    SHEET_ACTIVATION_CODES: ["Code", "Used", "Used_By", "Used_At"]
 }
 
 def generate_master_drinks():
@@ -280,6 +282,20 @@ def init_db():
             master_drinks = generate_master_drinks()
             drinks_df = pd.DataFrame(master_drinks, columns=COLUMNS[SHEET_GETRAENKE_DB])
             save_data(SHEET_GETRAENKE_DB, drinks_df)
+            
+        elif sheet == SHEET_ACTIVATION_CODES and df.empty:
+            import random
+            codes = []
+            for _ in range(20):
+                random_digits = f"{random.randint(1000, 9999)}"
+                codes.append({
+                    "Code": f"TSC-{random_digits}",
+                    "Used": "FALSE",
+                    "Used_By": "",
+                    "Used_At": ""
+                })
+            codes_df = pd.DataFrame(codes, columns=COLUMNS[SHEET_ACTIVATION_CODES])
+            save_data(SHEET_ACTIVATION_CODES, codes_df)
 
 # Run init on app startup
 if "db_initialized" not in st.session_state:
@@ -304,10 +320,23 @@ def login_user(username, password, is_hashed=False):
         return True
     return False
 
-def register_user(username, password, gewicht, groesse, geschlecht, profilbild):
+def register_user(username, password, gewicht, groesse, geschlecht, profilbild, activation_code):
     users_df = load_data(SHEET_USER_DB)
     if not users_df.empty and username.lower() in users_df['Username'].str.lower().values:
         return False, "Username bereits vergeben."
+        
+    codes_df = load_data(SHEET_ACTIVATION_CODES)
+    code_row = codes_df[codes_df['Code'] == activation_code]
+    if code_row.empty:
+        return False, "Ungültiger Aktivierungscode."
+    if str(code_row.iloc[0]['Used']).upper() == "TRUE":
+        return False, "Aktivierungscode wurde bereits verwendet."
+        
+    # Mark code as used
+    codes_df.loc[codes_df['Code'] == activation_code, 'Used'] = "TRUE"
+    codes_df.loc[codes_df['Code'] == activation_code, 'Used_By'] = username
+    codes_df.loc[codes_df['Code'] == activation_code, 'Used_At'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    save_data(SHEET_ACTIVATION_CODES, codes_df)
     
     pwd_hash = hash_password(password)
     new_user = pd.DataFrame([{
@@ -423,6 +452,7 @@ def login_view():
             st.subheader("Neuer Taucher")
             r_user = st.text_input("Username", key="r_user")
             r_pass = st.text_input("Passwort", type="password", key="r_pass")
+            r_code = st.text_input("Aktivierungscode", key="r_code", placeholder="Z.B. TSC-1234")
             r_gew = st.number_input("Gewicht (kg)", min_value=30.0, max_value=200.0, value=75.0)
             r_groesse = st.number_input("Größe (cm)", min_value=120, max_value=230, value=175)
             r_geschlecht = st.selectbox("Geschlecht", ["Männlich", "Weiblich"])
@@ -432,7 +462,7 @@ def login_view():
             r_pic_file = st.file_uploader("Oder eigenes Bild hochladen (Optional)", type=["jpg", "jpeg", "png"])
             
             if st.button("Registrieren", use_container_width=True):
-                if r_user and r_pass:
+                if r_user and r_pass and r_code:
                     # Handle Image Upload (compress to Base64)
                     profilbild = r_pic_emoji
                     if r_pic_file is not None:
@@ -449,7 +479,7 @@ def login_view():
                         except Exception as e:
                             st.warning("Bild konnte nicht verarbeitet werden. Nutze Emoji.")
                             
-                    success, msg = register_user(r_user, r_pass, r_gew, r_groesse, r_geschlecht, profilbild)
+                    success, msg = register_user(r_user, r_pass, r_gew, r_groesse, r_geschlecht, profilbild, r_code)
                     if success:
                         st.success(msg + " Bitte logge dich nun ein.")
                     else:
