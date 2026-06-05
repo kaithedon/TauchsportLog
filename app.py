@@ -1081,18 +1081,17 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
             if 'likes' not in stories_df.columns:
                 stories_df['likes'] = ""
                 
-            # Match by username and normalized timestamp (YYYY-MM-DD HH:MM:SS)
-            target_ts = str(story['timestamp']).replace('T', ' ')[:19]
-            stories_df['norm_ts'] = stories_df['timestamp'].apply(lambda x: str(x).replace('T', ' ')[:19])
-            
-            match_idx = stories_df[(stories_df['username'] == username) & (stories_df['norm_ts'] == target_ts)].index
+            # Match by username and first 50 chars of image data to be absolutely robust
+            img_prefix = str(story['image_data'])[:50]
+            stories_df['img_str'] = stories_df['image_data'].astype(str)
+            match_idx = stories_df[(stories_df['username'] == username) & (stories_df['img_str'].str.startswith(img_prefix))].index
             
             if not match_idx.empty:
                 new_likes_str = ",".join(liked_by)
                 stories_df.at[match_idx[0], 'likes'] = new_likes_str
-                stories_df = stories_df.drop(columns=['norm_ts'])
+                stories_df = stories_df.drop(columns=['img_str'])
                 save_data(SHEET_STORIES, stories_df)
-                user_stories_df.at[user_stories_df.index[story_idx], 'likes'] = new_likes_str
+                st.rerun()
 
     if is_own_story:
         with col_del:
@@ -1138,6 +1137,12 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
 
     if liked_by:
         st.markdown(f"<p style='font-size:12px; color:gray; text-align:center;'>Fachgerecht: {', '.join(liked_by)}</p>", unsafe_allow_html=True)
+    
+    st.write("")
+    if st.button("✖️ Schließen", use_container_width=True):
+        if "view_story" in st.query_params: del st.query_params["view_story"]
+        if "story_idx" in st.query_params: del st.query_params["story_idx"]
+        st.rerun()
 
 def render_stories_bar():
     # Load all users and stories
@@ -1177,13 +1182,11 @@ def render_stories_bar():
         del st.query_params["upload_story"]
         upload_story_dialog()
         
+    # Check if a story is selected
     story_user = st.query_params.get("view_story")
     if story_user and story_user in active_users:
         story_idx_str = st.query_params.get("story_idx", "0")
-        del st.query_params["view_story"]
-        if "story_idx" in st.query_params:
-            del st.query_params["story_idx"]
-            
+        
         user_stories = active_stories[active_stories['username'] == story_user].sort_values(by='timestamp', ascending=True)
         
         if story_idx_str == "last":
