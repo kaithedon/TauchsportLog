@@ -1147,6 +1147,11 @@ def public_profile_view(uname):
     total_ml = pd.to_numeric(user_logs['Menge_ml'], errors='coerce').sum()
     total_liters = round(total_ml / 1000, 2)
     
+    with st.expander("🏅 Abzeichen", expanded=False):
+        from badges import check_user_badges, render_profile_badges
+        earned_badges = check_user_badges(user_logs)
+        render_profile_badges(earned_badges)
+    
     st.subheader("📊 Trink-Statistiken")
     c1, c2, c3, c_vol = st.columns(4)
     c1.metric("All-Time", f"{all_time}")
@@ -2022,6 +2027,12 @@ def profil_view():
         c1.metric("Getränke heute", drinks_today)
         c2.metric("Liter heute", f"{liters_today} L")
         c3.metric("Dein Promillewert", f"{p_val} ‰")
+        
+        with st.expander("🏅 Meine Abzeichen", expanded=False):
+            from badges import check_user_badges, render_profile_badges
+            earned_badges = check_user_badges(my_logs)
+            render_profile_badges(earned_badges)
+            
         st.divider()
     
     tab_data, tab_pw = st.tabs(["Profildaten ändern", "Passwort ändern"])
