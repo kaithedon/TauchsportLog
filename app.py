@@ -583,7 +583,10 @@ def decode_barcode(image_file):
 def fetch_open_food_facts(barcode):
     try:
         url = f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
-        response = requests.get(url, timeout=5)
+        headers = {
+            "User-Agent": "TauchsportLog/1.0 (kai@bischoff.de)"
+        }
+        response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
             data = response.json()
             if data.get("status") == 1:
