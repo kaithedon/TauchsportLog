@@ -11,6 +11,7 @@ import io
 from PIL import Image
 from streamlit_cookies_controller import CookieController
 from streamlit_option_menu import option_menu
+from tenacity import retry, wait_exponential, stop_after_attempt
 
 cookie_controller = CookieController()
 
@@ -265,6 +266,7 @@ def get_gspread_client():
         st.error(f"Datenbankverbindung fehlgeschlagen. Bitte .streamlit/secrets.toml prüfen. Fehler: {e}")
         st.stop()
 
+@retry(wait=wait_exponential(multiplier=1, min=1, max=10), stop=stop_after_attempt(5))
 def get_worksheet(sheet_name):
     sheet = get_gspread_client()
     try:
@@ -274,6 +276,7 @@ def get_worksheet(sheet_name):
         st.info(f"Tabellenblatt '{sheet_name}' wird erstellt...")
         return sheet.add_worksheet(title=sheet_name, rows="1000", cols="20")
 
+@retry(wait=wait_exponential(multiplier=1, min=1, max=10), stop=stop_after_attempt(5))
 def load_data(sheet_name):
     ws = get_worksheet(sheet_name)
     # Read everything into a dataframe
@@ -286,6 +289,7 @@ def load_data(sheet_name):
         
     return df
 
+@retry(wait=wait_exponential(multiplier=1, min=1, max=10), stop=stop_after_attempt(5))
 def save_data(sheet_name, df):
     ws = get_worksheet(sheet_name)
     ws.clear()
