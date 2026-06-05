@@ -1067,15 +1067,13 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                 if st.button("🗑️", help="Story löschen"):
                     with st.spinner("Lösche..."):
                         stories_df = load_data(SHEET_STORIES)
-                        target_dt = pd.to_datetime(story['timestamp'])
-                        stories_df['dt'] = pd.to_datetime(stories_df['timestamp'])
                         
-                        drop_mask = (stories_df['username'] == username) & (stories_df['dt'] == target_dt)
+                        # Match by username and exact image_data to avoid timestamp parsing issues
+                        drop_mask = (stories_df['username'] == username) & (stories_df['image_data'] == story['image_data'])
                         drop_idx = stories_df[drop_mask].index
                         
                         if not drop_idx.empty:
                             stories_df = stories_df.drop(drop_idx)
-                            stories_df = stories_df.drop(columns=['dt'])
                             save_data(SHEET_STORIES, stories_df)
                             st.success("Gelöscht!")
                             
@@ -1111,7 +1109,7 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
     
     i_liked = st.session_state.username in liked_by
     like_icon = "❤️" if i_liked else "🤍"
-    like_text = f"{like_icon} Gefällt mir ({len(liked_by)})"
+    like_text = f"{like_icon} Fachgerecht ({len(liked_by)})"
     
     if st.button(like_text, type="primary" if i_liked else "secondary", use_container_width=True):
         if i_liked:
@@ -1123,22 +1121,20 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
         if 'likes' not in stories_df.columns:
             stories_df['likes'] = ""
             
-        target_dt = pd.to_datetime(story['timestamp'])
-        stories_df['dt'] = pd.to_datetime(stories_df['timestamp'])
+        # Match by username and exact image_data to avoid timestamp parsing precision issues
+        match_idx = stories_df[(stories_df['username'] == username) & (stories_df['image_data'] == story['image_data'])].index
         
-        match_idx = stories_df[(stories_df['username'] == username) & (stories_df['dt'] == target_dt)].index
         if not match_idx.empty:
-            stories_df.at[match_idx[0], 'likes'] = ",".join(liked_by)
-            stories_df = stories_df.drop(columns=['dt'])
+            new_likes_str = ",".join(liked_by)
+            stories_df.at[match_idx[0], 'likes'] = new_likes_str
             save_data(SHEET_STORIES, stories_df)
             
-            # MUST restore query params before rerun to keep dialog open!
-            st.query_params["view_story"] = username
-            st.query_params["story_idx"] = str(story_idx)
-            st.rerun()
+            # Mutate local dataframe so the dialog seamlessly updates without full app rerun
+            user_stories_df.at[user_stories_df.index[story_idx], 'likes'] = new_likes_str
+            # No st.rerun() called here! The dialog will smoothly refresh itself.
 
     if liked_by:
-        st.markdown(f"<p style='font-size:12px; color:gray; text-align:center;'>Gefällt: {', '.join(liked_by)}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-size:12px; color:gray; text-align:center;'>Fachgerecht: {', '.join(liked_by)}</p>", unsafe_allow_html=True)
 
 def render_stories_bar():
     # Load all users and stories
