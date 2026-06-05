@@ -770,18 +770,19 @@ def buchung_view():
                             if st.button("Jetzt live einbuchen 🎯", use_container_width=True, key="btn_sc"):
                                 book_drink_now(row['Marke'], row['Sorte'], float(row['Standard_Menge_ml']), float(row['Alkoholgehalt_Vol']), anzahl_sc, get_now_berlin(), final_lat, final_lon)
                         else:
-                            st.warning("Getränk nicht in lokaler Datenbank. Suche online...")
+                            st.warning("Getränk nicht in lokaler Datenbank.")
                             product_data = fetch_open_food_facts(barcode)
                             if product_data:
+                                st.info(f"Online gefunden: **{product_data['marke']} {product_data['sorte']}**")
+                            
+                            st.write("Möchtest du dieses Getränk in die Datenbank aufnehmen?")
+                            if st.button("Getränk mit gescanntem Barcode erstellen", use_container_width=True):
                                 st.session_state.prefill_barcode = barcode
-                                st.session_state.prefill_marke = product_data['marke']
-                                st.session_state.prefill_sorte = product_data['sorte']
-                                st.session_state.prefill_menge = int(product_data['menge'])
-                                st.session_state.prefill_alk = float(product_data['alk'])
-                                st.session_state.buchung_tab = "➕ Eigenes Getränk anlegen"
-                                st.rerun()
-                            else:
-                                st.session_state.prefill_barcode = barcode
+                                if product_data:
+                                    st.session_state.prefill_marke = product_data['marke']
+                                    st.session_state.prefill_sorte = product_data['sorte']
+                                    st.session_state.prefill_menge = int(product_data['menge'])
+                                    st.session_state.prefill_alk = float(product_data['alk'])
                                 st.session_state.buchung_tab = "➕ Eigenes Getränk anlegen"
                                 st.rerun()
                     else:
