@@ -1133,6 +1133,18 @@ def admin_view():
                 {"Marke": "Cuba Libre", "Sorte": "Cocktail (0.3l)", "Vol": 12.5, "Menge": 300},
                 {"Marke": "Mai Tai", "Sorte": "Cocktail-Stark (0.3l)", "Vol": 17.0, "Menge": 300}
             ]
+            neue_cocktails.extend([
+                {"Marke": "Whiskey Sour", "Sorte": "Cocktail-Klassiker (0.2l)", "Vol": 14.0, "Menge": 200},
+                {"Marke": "Aperol Sour", "Sorte": "Cocktail-Klassiker (0.2l)", "Vol": 9.5, "Menge": 200},
+                {"Marke": "Gimlet", "Sorte": "Cocktail-Klassiker (0.1l)", "Vol": 22.0, "Menge": 100},
+                {"Marke": "Manhattan", "Sorte": "Cocktail-Stark (0.1l)", "Vol": 25.0, "Menge": 100},
+                {"Marke": "Negroni", "Sorte": "Cocktail-Stark (0.1l)", "Vol": 24.0, "Menge": 100},
+                {"Marke": "Old Fashioned", "Sorte": "Cocktail-Stark (0.1l)", "Vol": 28.0, "Menge": 100},
+                {"Marke": "White Russian", "Sorte": "Cocktail-Sahne (0.2l)", "Vol": 16.0, "Menge": 200},
+                {"Marke": "Black Russian", "Sorte": "Cocktail (0.15l)", "Vol": 22.0, "Menge": 150},
+                {"Marke": "Margarita", "Sorte": "Cocktail-Klassiker (0.12l)", "Vol": 20.0, "Menge": 120},
+                {"Marke": "Cosmopolitan", "Sorte": "Cocktail-Klassiker (0.15l)", "Vol": 17.0, "Menge": 150}
+            ])
             new_drinks.extend([{
                 "Marke": c["Marke"],
                 "Sorte": c["Sorte"],
@@ -1157,12 +1169,71 @@ def admin_view():
                 {"Marke": "Malibu Kirsch", "Sorte": "Longdrink (0.3l)", "Vol": 2.8, "Menge": 300},
                 {"Marke": "Pernod Cola", "Sorte": "Longdrink (0.3l)", "Vol": 5.3, "Menge": 300}
             ]
+            fertige_longdrinks.extend([
+                {"Marke": "Southern Ginger", "Sorte": "Longdrink (0.3l)", "Vol": 4.7, "Menge": 300},
+                {"Marke": "Campari Tonic", "Sorte": "Longdrink (0.25l)", "Vol": 4.0, "Menge": 250},
+                {"Marke": "Malibu Sprite", "Sorte": "Longdrink (0.3l)", "Vol": 2.8, "Menge": 300},
+                {"Marke": "Captain Cola", "Sorte": "Longdrink (0.3l)", "Vol": 4.7, "Menge": 300},
+                {"Marke": "Havana Cola", "Sorte": "Longdrink (0.3l)", "Vol": 5.3, "Menge": 300},
+                {"Marke": "Gin Wild Berry", "Sorte": "Longdrink (0.25l)", "Vol": 6.0, "Menge": 250},
+                {"Marke": "Wodka Kirsch", "Sorte": "Longdrink (0.3l)", "Vol": 5.0, "Menge": 300},
+                {"Marke": "Whiskey Ginger (Irland-Style)", "Sorte": "Longdrink (0.3l)", "Vol": 5.3, "Menge": 300}
+            ])
             new_drinks.extend([{
                 "Marke": l["Marke"],
                 "Sorte": l["Sorte"],
                 "Alkoholgehalt_Vol": round(l["Vol"], 2),
                 "Standard_Menge_ml": l["Menge"]
             } for l in fertige_longdrinks])
+            
+            # Saison- & Heißgetränke
+            saison_und_heiss = [
+                {"Marke": "Glühwein Pur", "Sorte": "Heißgetränk (0.2l)", "Vol": 10.5, "Menge": 200},
+                {"Marke": "Eierpunsch mit Sahne", "Sorte": "Heißgetränk (0.2l)", "Vol": 11.0, "Menge": 200},
+                {"Marke": "Heiße Oma (Milch mit Cognac)", "Sorte": "Heißgetränk (0.2l)", "Vol": 8.0, "Menge": 200},
+                {"Marke": "Pharisäer (Kaffee mit Rum)", "Sorte": "Heißgetränk (0.2l)", "Vol": 10.0, "Menge": 200},
+                {"Marke": "Heißer Kirschglühwein", "Sorte": "Heißgetränk (0.2l)", "Vol": 10.5, "Menge": 200}
+            ]
+            new_drinks.extend([{
+                "Marke": h["Marke"],
+                "Sorte": h["Sorte"],
+                "Alkoholgehalt_Vol": round(h["Vol"], 2),
+                "Standard_Menge_ml": h["Menge"]
+            } for h in saison_und_heiss])
+            
+            # Bar-Longdrinks
+            bar_longdrinks = [
+                {"Marke": "London Mule (Gin Mule)", "Sorte": "Klassiker (0.3l)", "Vol": 5.6, "Menge": 300},
+                {"Marke": "Cuba Libre Premium (Havana 7)", "Sorte": "Premium-Mix (0.3l)", "Vol": 13.3, "Menge": 300},
+                {"Marke": "Horse's Neck", "Sorte": "Bourbon-Mix (0.25l)", "Vol": 6.4, "Menge": 250},
+                {"Marke": "El Diablo", "Sorte": "Tequila-Mix (0.3l)", "Vol": 7.5, "Menge": 300},
+                {"Marke": "Gin Buck", "Sorte": "Klassiker (0.3l)", "Vol": 5.6, "Menge": 300}
+            ]
+            new_drinks.extend([{
+                "Marke": b["Marke"],
+                "Sorte": b["Sorte"],
+                "Alkoholgehalt_Vol": round(b["Vol"], 2),
+                "Standard_Menge_ml": b["Menge"]
+            } for b in bar_longdrinks])
+            
+            # Spezial-Shots & Absacker
+            spezial_shots = [
+                {"Marke": "Jägermeister (Eiskalt)", "Sorte": "Kräuter (2cl)", "Vol": 35.0, "Menge": 20},
+                {"Marke": "Fernet Branca", "Sorte": "Kräuter (2cl)", "Vol": 39.0, "Menge": 20},
+                {"Marke": "Underberg", "Sorte": "Kräuter (2cl)", "Vol": 44.0, "Menge": 20},
+                {"Marke": "Linie Aquavit", "Sorte": "Kloster-Shot (2cl)", "Vol": 41.5, "Menge": 20},
+                {"Marke": "Kamikaze", "Sorte": "Wodka-Shot (4cl)", "Vol": 22.0, "Menge": 40},
+                {"Marke": "Orgasmus", "Sorte": "Likör-Shot (2cl)", "Vol": 22.0, "Menge": 20},
+                {"Marke": "Liquid Cocaine", "Sorte": "Stark-Shot (4cl)", "Vol": 26.0, "Menge": 40},
+                {"Marke": "U-Boot (Korn in Pils)", "Sorte": "Spezial-Mix (220ml)", "Vol": 6.2, "Menge": 220}
+            ]
+            new_drinks.extend([{
+                "Marke": s["Marke"],
+                "Sorte": s["Sorte"],
+                "Alkoholgehalt_Vol": round(s["Vol"], 2),
+                "Standard_Menge_ml": s["Menge"]
+            } for s in spezial_shots])
+            
             
             df = load_data(SHEET_GETRAENKE_DB)
             df_new = pd.DataFrame(new_drinks)
