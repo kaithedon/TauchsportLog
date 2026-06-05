@@ -566,25 +566,26 @@ def buchung_view():
 
     with st.container(border=True):
         st.markdown("<h4 style='margin-bottom: 0;'>📍 GPS-Standort für dieses Getränk</h4>", unsafe_allow_html=True)
-        st.session_state.gps_active = st.toggle(
-            "Standort beim Buchen automatisch erfassen (wird für deinen nächsten Besuch gemerkt)", 
+        
+        # Dynamisches Label für absolute Klarheit
+        if st.session_state.gps_active:
+            label = "🟢 Standort-Erfassung ist AKTIV"
+        else:
+            label = "🔴 Standort-Erfassung ist AUS"
+            
+        st.session_state.gps_active = st.checkbox(
+            label, 
             value=st.session_state.gps_active
         )
+        st.caption("Wird für deinen nächsten Besuch gemerkt.")
     
-    # CSS für unsichtbare Felder und den grünen Schalter
+    # CSS für unsichtbare Felder (ohne Toggle-Hack)
     css_hacks = """<style>
 div[data-testid="stTextInput"]:has(input[placeholder="GPS_LAT_PLACEHOLDER"]),
 div[data-testid="stTextInput"]:has(input[placeholder="GPS_LON_PLACEHOLDER"]) {
     display: none !important;
 }
-"""
-    if st.session_state.gps_active:
-        css_hacks += """
-div[data-testid="stToggle"] [data-baseweb="toggle"] > div {
-    background-color: #27ae60 !important;
-}
-"""
-    css_hacks += "</style>"
+</style>"""
     st.markdown(css_hacks, unsafe_allow_html=True)
     
     lat_val = st.text_input("hidden_lat", placeholder="GPS_LAT_PLACEHOLDER", key="gps_lat", label_visibility="hidden")
