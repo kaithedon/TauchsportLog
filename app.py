@@ -561,66 +561,54 @@ def buchung_view():
     st.title("🍺 Getränke buchen")
     
     # --- GPS STANDORT ERFASSUNG ---
-    gps_active = st.checkbox("📍 Standort automatisch erfassen", value=False, key="gps_active")
+    if "gps_active" not in st.session_state:
+        st.session_state.gps_active = False
+
+    with st.container(border=True):
+        st.markdown("<h4 style='margin-bottom: 0;'>📍 GPS-Standort für dieses Getränk</h4>", unsafe_allow_html=True)
+        st.session_state.gps_active = st.toggle(
+            "Standort beim Buchen automatisch erfassen (wird für deinen nächsten Besuch gemerkt)", 
+            value=st.session_state.gps_active
+        )
     
-    st.markdown("""
-    <style>
-    div[data-testid="stTextInput"]:has(input[aria-label="hidden_lat"]),
-    div[data-testid="stTextInput"]:has(input[aria-label="hidden_lon"]) {
-        display: none !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    st.markdown("""<style>
+div[data-testid="stTextInput"]:has(input[aria-label="hidden_lat"]),
+div[data-testid="stTextInput"]:has(input[aria-label="hidden_lon"]) {
+    display: none !important;
+}
+</style>""", unsafe_allow_html=True)
     
     lat_val = st.text_input("hidden_lat", key="gps_lat", label_visibility="hidden")
     lon_val = st.text_input("hidden_lon", key="gps_lon", label_visibility="hidden")
     
-    if gps_active:
-        st.markdown("""
-        <iframe allow="geolocation" srcdoc="
-        <script>
-            console.log('Starte GPS-Abfrage...');
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(pos) {
-                    console.log('GPS erfolgreich!', pos.coords);
-                    const inputs = window.parent.document.querySelectorAll('input');
-                    let latInput = null;
-                    let lonInput = null;
-                    inputs.forEach(el => {
-                        if (el.getAttribute('aria-label') === 'hidden_lat') latInput = el;
-                        if (el.getAttribute('aria-label') === 'hidden_lon') lonInput = el;
-                    });
-
-                    if (latInput && lonInput) {
-                        let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-                        
-                        nativeInputValueSetter.call(latInput, pos.coords.latitude);
-                        latInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        latInput.dispatchEvent(new Event('change', { bubbles: true }));
-                        
-                        nativeInputValueSetter.call(lonInput, pos.coords.longitude);
-                        lonInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        lonInput.dispatchEvent(new Event('change', { bubbles: true }));
-                        console.log('GPS-Werte erfolgreich an Streamlit übergeben.');
-                    } else {
-                        console.error('Versteckte Input-Felder nicht gefunden.');
-                    }
-                }, function(err) {
-                    console.error('GPS-Fehler:', err.message);
-                }, {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                });
-            } else {
-                console.error('Geolocation wird vom Browser nicht unterstützt.');
-            }
-        </script>
-        " style="display:none; width:0; height:0;"></iframe>
-        """, unsafe_allow_html=True)
+    if st.session_state.gps_active:
+        # Kein Einrücken hier, da Streamlit sonst Markdown-Codeblöcke rendert!
+        iframe_html = """<iframe allow="geolocation" style="display:none; width:0; height:0;" srcdoc="<script>
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(pos) {
+        const inputs = window.parent.document.querySelectorAll('input');
+        let latInput = null;
+        let lonInput = null;
+        inputs.forEach(el => {
+            if (el.getAttribute('aria-label') === 'hidden_lat') latInput = el;
+            if (el.getAttribute('aria-label') === 'hidden_lon') lonInput = el;
+        });
+        if (latInput && lonInput) {
+            let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+            nativeInputValueSetter.call(latInput, pos.coords.latitude);
+            latInput.dispatchEvent(new Event('input', { bubbles: true }));
+            latInput.dispatchEvent(new Event('change', { bubbles: true }));
+            nativeInputValueSetter.call(lonInput, pos.coords.longitude);
+            lonInput.dispatchEvent(new Event('input', { bubbles: true }));
+            lonInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }, function(err) { console.error('GPS-Fehler:', err.message); }, { enableHighAccuracy: true });
+}
+</script>"></iframe>"""
+        st.markdown(iframe_html, unsafe_allow_html=True)
         
-    final_lat = float(lat_val) if (gps_active and lat_val) else None
-    final_lon = float(lon_val) if (gps_active and lon_val) else None
+    final_lat = float(lat_val) if (st.session_state.gps_active and lat_val) else None
+    final_lon = float(lon_val) if (st.session_state.gps_active and lon_val) else None
     
     # QUICK ACCESS
     logs_df = load_data(SHEET_KONSUM_LOG)
