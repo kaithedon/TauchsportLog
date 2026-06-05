@@ -9,6 +9,9 @@ import uuid
 import base64
 import io
 from PIL import Image
+from streamlit_cookies_controller import CookieController
+
+cookie_controller = CookieController()
 
 # --- PAGE CONFIG ---
 st.set_page_config(
@@ -313,9 +316,9 @@ if "db_initialized" not in st.session_state:
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-def login_user(username, password):
+def login_user(username, password, is_hashed=False):
     users_df = load_data(SHEET_USER_DB)
-    pwd_hash = hash_password(password)
+    pwd_hash = password if is_hashed else hash_password(password)
     user = users_df[(users_df['Username'] == username) & (users_df['Password_Hash'] == pwd_hash)]
     if not user.empty:
         st.session_state.logged_in = True
@@ -432,6 +435,8 @@ def login_view():
             l_pass = st.text_input("Passwort", type="password", key="l_pass")
             if st.button("Einloggen", use_container_width=True):
                 if login_user(l_user, l_pass):
+                    cookie_controller.set('tsc_user', l_user)
+                    cookie_controller.set('tsc_hash', hash_password(l_pass))
                     st.rerun()
                 else:
                     st.error("Falscher Username oder Passwort.")
@@ -784,6 +789,12 @@ def profil_view():
 # --- MAIN LOGIC ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
+    
+    # Try autologin via cookies
+    saved_user = cookie_controller.get('tsc_user')
+    saved_hash = cookie_controller.get('tsc_hash')
+    if saved_user and saved_hash:
+        login_user(saved_user, saved_hash, is_hashed=True)
 
 if not st.session_state.logged_in:
     login_view()
@@ -804,6 +815,8 @@ else:
         choice = st.radio("Navigation", menu, horizontal=True, label_visibility="collapsed")
     with col_logout:
         if st.button("Logout", use_container_width=True):
+            cookie_controller.remove('tsc_user')
+            cookie_controller.remove('tsc_hash')
             st.session_state.logged_in = False
             st.rerun()
             
