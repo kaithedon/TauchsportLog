@@ -381,35 +381,33 @@ def calc_promille(username):
     logs_df = load_data(SHEET_KONSUM_LOG)
     logs_df['Zeitstempel'] = pd.to_datetime(logs_df['Zeitstempel'])
     
-    # Consider only drinks from TODAY (midnight onwards)
-    now = get_now_berlin()
-    cutoff = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    user_logs = logs_df[(logs_df['Username'].astype(str).str.strip().str.lower() == str(username).strip().lower()) & (logs_df['Zeitstempel'] >= cutoff)]
-    
+    user_logs = logs_df[(logs_df['Username'].astype(str).str.strip().str.lower() == str(username).strip().lower())]
     if user_logs.empty: return 0.0
     
     user_logs = user_logs.sort_values('Zeitstempel')
     
-    # 1. Summiere den reinen Alkohol auf das theoretische Maximum
-    max_promille = 0.0
+    current_promille = 0.0
+    last_time = None
+    
     for _, row in user_logs.iterrows():
+        t = row['Zeitstempel']
         ml = float(row['Menge_ml'])
         vol = float(row['Alk_Vol'])
+        
+        if last_time is not None:
+            hours_passed = (t - last_time).total_seconds() / 3600.0
+            if hours_passed > 0:
+                current_promille = max(0.0, current_promille - (hours_passed * 0.15))
+                
         a = ml * (vol / 100) * 0.8
-        max_promille += a / (gewicht * r)
+        current_promille += a / (gewicht * r)
+        last_time = t
         
-    # 2. Ermittle den Zeitpunkt des ersten Drinks
-    first_drink_time = user_logs['Zeitstempel'].min()
-    
-    # 3. Berechne die komplett vergangenen Stunden seit dem ersten Drink
-    hours_elapsed = (now - first_drink_time).total_seconds() / 3600.0
-    if hours_elapsed < 0:
-        hours_elapsed = 0.0
-        
-    # 4. Ziehe den kontinuierlichen Abbau (0.15/h) vom Gesamt-Promille ab
-    elimination = hours_elapsed * 0.15
-    current_promille = max(0.0, max_promille - elimination)
-    
+    if last_time is not None:
+        hours_passed = (now - last_time).total_seconds() / 3600.0
+        if hours_passed > 0:
+            current_promille = max(0.0, current_promille - (hours_passed * 0.15))
+            
     return round(current_promille, 2)
 
 def get_symptom_info(promille):
@@ -1061,10 +1059,13 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
         if has_prev:
             if st.button("◀ Zurück", use_container_width=True, key=f"prev_btn_{username}_{story_idx}"):
                 if story_idx > 0:
+                    st.session_state.tracked_story_idx = story_idx - 1
                     st.query_params["view_story"] = username
                     st.query_params["story_idx"] = str(story_idx - 1)
                 else:
                     prev_user = ordered_active_users[curr_user_idx - 1]
+                    st.session_state.tracked_story_user = prev_user
+                    st.session_state.tracked_story_idx = "last"
                     st.query_params["view_story"] = prev_user
                     st.query_params["story_idx"] = "last"
                 st.rerun()
@@ -1127,10 +1128,13 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
         if has_next:
             if st.button("Weiter ▶", use_container_width=True, key=f"next_btn_{username}_{story_idx}"):
                 if story_idx < len(user_stories_df) - 1:
+                    st.session_state.tracked_story_idx = story_idx + 1
                     st.query_params["view_story"] = username
                     st.query_params["story_idx"] = str(story_idx + 1)
                 else:
                     next_user = ordered_active_users[curr_user_idx + 1]
+                    st.session_state.tracked_story_user = next_user
+                    st.session_state.tracked_story_idx = 0
                     st.query_params["view_story"] = next_user
                     st.query_params["story_idx"] = "0"
                 st.rerun()
@@ -1185,19 +1189,37 @@ def render_stories_bar():
     # Check if a story is selected
     story_user = st.query_params.get("view_story")
     if story_user and story_user in active_users:
-        story_idx_str = st.query_params.get("story_idx", "0")
         
-        user_stories = active_stories[active_stories['username'] == story_user].sort_values(by='timestamp', ascending=True)
-        
-        if story_idx_str == "last":
-            story_idx = len(user_stories) - 1
-        else:
-            try:
-                story_idx = int(story_idx_str)
-                if story_idx >= len(user_stories) or story_idx < 0:
+        # Check tracking to survive reruns correctly without losing index
+        if st.session_state.get('tracked_story_user') == story_user:
+            story_idx_val = st.session_state.get('tracked_story_idx', 0)
+            user_stories = active_stories[active_stories['username'] == story_user].sort_values(by='timestamp', ascending=True)
+            
+            if story_idx_val == "last":
+                story_idx = len(user_stories) - 1
+            else:
+                try:
+                    story_idx = int(story_idx_val)
+                    if story_idx >= len(user_stories) or story_idx < 0:
+                        story_idx = 0
+                except:
                     story_idx = 0
-            except:
-                story_idx = 0
+        else:
+            story_idx_str = st.query_params.get("story_idx", "0")
+            user_stories = active_stories[active_stories['username'] == story_user].sort_values(by='timestamp', ascending=True)
+            
+            if story_idx_str == "last":
+                story_idx = len(user_stories) - 1
+            else:
+                try:
+                    story_idx = int(story_idx_str)
+                    if story_idx >= len(user_stories) or story_idx < 0:
+                        story_idx = 0
+                except:
+                    story_idx = 0
+                    
+            st.session_state.tracked_story_user = story_user
+            st.session_state.tracked_story_idx = story_idx
                 
         view_story_dialog(story_user, story_idx, user_stories, ordered_active_users)
 
