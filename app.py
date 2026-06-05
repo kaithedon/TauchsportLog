@@ -1040,7 +1040,42 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
         st.markdown(f"<p style='text-align:center; margin-top:10px; font-weight:bold;'>{caption}</p>", unsafe_allow_html=True)
         
     st.write("")
-    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    # --- LIKE BUTTON ---
+    likes_str = str(story.get('likes', ''))
+    if likes_str.lower() == 'nan': likes_str = ''
+    liked_by = [u.strip() for u in likes_str.split(',') if u.strip()]
+    
+    i_liked = st.session_state.username in liked_by
+    like_icon = "❤️" if i_liked else "🤍"
+    like_text = f"{like_icon} Gefällt mir ({len(liked_by)})"
+    
+    if st.button(like_text, type="primary" if i_liked else "secondary", use_container_width=True):
+        if i_liked:
+            liked_by.remove(st.session_state.username)
+        else:
+            liked_by.append(st.session_state.username)
+        
+        stories_df = load_data(SHEET_STORIES)
+        if 'likes' not in stories_df.columns:
+            stories_df['likes'] = ""
+            
+        target_dt = pd.to_datetime(story['timestamp'])
+        stories_df['dt'] = pd.to_datetime(stories_df['timestamp'])
+        
+        match_idx = stories_df[(stories_df['username'] == username) & (stories_df['dt'] == target_dt)].index
+        if not match_idx.empty:
+            stories_df.at[match_idx[0], 'likes'] = ",".join(liked_by)
+            stories_df = stories_df.drop(columns=['dt'])
+            save_data(SHEET_STORIES, stories_df)
+            st.rerun()
+
+    if liked_by:
+        st.markdown(f"<p style='font-size:12px; color:gray;'>Gefällt: {', '.join(liked_by)}</p>", unsafe_allow_html=True)
+    
+    st.write("---")
+    
+    col1, col2, col3 = st.columns([1, 1, 1])
     
     curr_user_idx = ordered_active_users.index(username)
     has_prev = (story_idx > 0) or (curr_user_idx > 0)
@@ -1059,32 +1094,35 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                 st.rerun()
             
     with col2:
+        st.write("") # Padding
         if username == st.session_state.username:
-            if st.button("🗑️ Löschen", use_container_width=True, type="secondary"):
-                with st.spinner("Lösche Story..."):
-                    stories_df = load_data(SHEET_STORIES)
-                    target_dt = pd.to_datetime(story['timestamp'])
-                    stories_df['dt'] = pd.to_datetime(stories_df['timestamp'])
-                    
-                    drop_mask = (stories_df['username'] == username) & (stories_df['dt'] == target_dt)
-                    drop_idx = stories_df[drop_mask].index
-                    
-                    if not drop_idx.empty:
-                        stories_df = stories_df.drop(drop_idx)
-                        stories_df = stories_df.drop(columns=['dt'])
-                        save_data(SHEET_STORIES, stories_df)
-                        st.success("Story gelöscht!")
+            col_del1, col_del2, col_del3 = st.columns([1, 2, 1])
+            with col_del2:
+                if st.button("🗑️", help="Story löschen"):
+                    with st.spinner("Lösche..."):
+                        stories_df = load_data(SHEET_STORIES)
+                        target_dt = pd.to_datetime(story['timestamp'])
+                        stories_df['dt'] = pd.to_datetime(stories_df['timestamp'])
                         
-                        if "view_story" in st.query_params:
-                            del st.query_params["view_story"]
-                        if "story_idx" in st.query_params:
-                            del st.query_params["story_idx"]
+                        drop_mask = (stories_df['username'] == username) & (stories_df['dt'] == target_dt)
+                        drop_idx = stories_df[drop_mask].index
+                        
+                        if not drop_idx.empty:
+                            stories_df = stories_df.drop(drop_idx)
+                            stories_df = stories_df.drop(columns=['dt'])
+                            save_data(SHEET_STORIES, stories_df)
+                            st.success("Gelöscht!")
                             
-                        import time
-                        time.sleep(1)
-                        st.rerun()
-                    else:
-                        st.error("Story nicht gefunden!")
+                            if "view_story" in st.query_params:
+                                del st.query_params["view_story"]
+                            if "story_idx" in st.query_params:
+                                del st.query_params["story_idx"]
+                                
+                            import time
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                            st.error("Story nicht gefunden!")
                     
     with col3:
         if has_next:
