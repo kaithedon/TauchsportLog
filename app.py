@@ -111,20 +111,135 @@ COLUMNS = {
     SHEET_BACKUP_HISTORY: ["Backup_Zeitstempel", "Log_ID", "Zeitstempel", "Username", "Marke", "Sorte", "Menge_ml", "Alk_Vol"]
 }
 
-DEFAULT_DRINKS = [
-    ["Licher", "Pils", 4.8, 330],
-    ["Veltins", "Pils", 4.8, 330],
-    ["Krombacher", "Pils", 4.8, 330],
-    ["Bitburger", "Pils", 4.8, 330],
-    ["Becks", "Pils", 4.9, 330],
-    ["Augustiner", "Hell", 5.2, 500],
-    ["Paulaner", "Weißbier", 5.5, 500],
-    ["Erdinger", "Weißbier", 5.3, 500],
-    ["Heineken", "Lager", 5.0, 330],
-    ["Astra", "Urtyp", 4.9, 330],
-    ["Jägermeister", "Shot", 35.0, 20],
-    ["Softdrinks/Wasser", "Alkoholfrei", 0.0, 330]
-]
+def generate_master_drinks():
+    Brauereien = [
+        "Licher", "Veltins", "Krombacher", "Bitburger", "Becks", "Warsteiner", "Radeberger", 
+        "Jever", "Flensburger", "Rothaus", "Ur-Krostitzer", "König Pilsener", "Hasseröder",
+        "Augustiner", "Bayreuther", "Chiemseer", "Tegernseer", "Paulaner", "Spaten", 
+        "Oberdorfer", "Büble", "Hacker-Pschorr", "Löwenbräu", "Weihenstephan", "Ayinger",
+        "Erdinger", "Franziskaner", "Maisel's", "Schöfferhofer", "Schneider Weisse", "Benediktiner",
+        "Früh", "Reissdorf", "Gaffel", "Füchschen", "Uerige", "Diebels",
+        "Astra", "Sternburg", "Oettinger", "5,0 Original", "Paderborner",
+        "Heineken", "Corona", "Desperados", "Salitos", "Gösser", "San Miguel", "Peroni", 
+        "Guinness", "Kilkenny", "Budweiser", "Estrella Damm", "Carlsberg", "Tuborg"
+    ]
+
+    Sorten_Konfiguration = [
+        {"Sorte": "Pils (0.33l)", "Vol": 4.8, "Menge": 330},
+        {"Sorte": "Pils (0.5l)", "Vol": 4.8, "Menge": 500},
+        {"Sorte": "Helles (0.5l)", "Vol": 5.0, "Menge": 500},
+        {"Sorte": "Export (0.5l)", "Vol": 5.2, "Menge": 500},
+        {"Sorte": "Hefe-Weizen (0.5l)", "Vol": 5.5, "Menge": 500},
+        {"Sorte": "Kristall-Weizen (0.5l)", "Vol": 5.5, "Menge": 500},
+        {"Sorte": "Dunkelbier (0.5l)", "Vol": 5.1, "Menge": 500},
+        {"Sorte": "Radler (0.33l)", "Vol": 2.5, "Menge": 330},
+        {"Sorte": "Radler (0.5l)", "Vol": 2.5, "Menge": 500},
+        {"Sorte": "Alkoholfrei (0.33l)", "Vol": 0.0, "Menge": 330},
+        {"Sorte": "Alkoholfrei (0.5l)", "Vol": 0.0, "Menge": 500}
+    ]
+
+    Apfelwein_Marken = ["Possmann", "Bembel-with-Care", "Rapp's", "Höhl", "Heil"]
+    Apfelwein_Sorten = [
+        {"Sorte": "Pur (0.5l)", "Vol": 5.5, "Menge": 500},
+        {"Sorte": "Sauergespratzt (0.5l)", "Vol": 4.0, "Menge": 500},
+        {"Sorte": "Süßgespratzt (0.5l)", "Vol": 3.5, "Menge": 500},
+        {"Sorte": "Cola-Ascher (0.5l)", "Vol": 3.8, "Menge": 500},
+        {"Sorte": "Kirsch-Weis (0.5l)", "Vol": 4.2, "Menge": 500}
+    ]
+
+    Spirituosen = [
+        {"Name": "Bacardi Carta Blanca", "Vol": 37.5, "Menge": 40},
+        {"Name": "Bacardi Oakheart", "Vol": 35.0, "Menge": 40},
+        {"Name": "Havana Club 3 Jahre", "Vol": 40.0, "Menge": 40},
+        {"Name": "Havana Club 7 Jahre", "Vol": 40.0, "Menge": 40},
+        {"Name": "Captain Morgan Spiced Gold", "Vol": 35.0, "Menge": 40},
+        {"Name": "Jack Daniel's Old No. 7", "Vol": 40.0, "Menge": 40},
+        {"Name": "Jack Daniel's Honey", "Vol": 35.0, "Menge": 40},
+        {"Name": "Jim Beam Bourbon", "Vol": 40.0, "Menge": 40},
+        {"Name": "Johnny Walker Red Label", "Vol": 40.0, "Menge": 40},
+        {"Name": "Jameson Irish Whiskey", "Vol": 40.0, "Menge": 40},
+        {"Name": "Tullamore Dew", "Vol": 40.0, "Menge": 40},
+        {"Name": "Absolut Wodka", "Vol": 40.0, "Menge": 40},
+        {"Name": "Wodka Gorbatschow", "Vol": 37.5, "Menge": 40},
+        {"Name": "Smirnoff Ice / Wodka", "Vol": 37.5, "Menge": 40},
+        {"Name": "Three Sixty Wodka", "Vol": 37.5, "Menge": 40},
+        {"Name": "Gordon's London Dry Gin", "Vol": 37.5, "Menge": 40},
+        {"Name": "Bombay Sapphire Gin", "Vol": 40.0, "Menge": 40},
+        {"Name": "Hendrick's Gin", "Vol": 44.0, "Menge": 40},
+        {"Name": "Tanqueray Gin", "Vol": 47.3, "Menge": 40},
+        {"Name": "Jägermeister", "Vol": 35.0, "Menge": 40},
+        {"Name": "Asbach Uralt", "Vol": 38.0, "Menge": 40},
+        {"Name": "Campari", "Vol": 25.0, "Menge": 40},
+        {"Name": "Malibu Kokoslikör", "Vol": 21.0, "Menge": 40},
+        {"Name": "Aperol", "Vol": 11.0, "Menge": 40},
+        {"Name": "Lillet Blanc", "Vol": 17.0, "Menge": 40},
+        {"Name": "Ramazzotti", "Vol": 30.0, "Menge": 40},
+        {"Name": "Averna", "Vol": 29.0, "Menge": 40},
+        {"Name": "Baileys Irish Cream", "Vol": 17.0, "Menge": 40},
+        {"Name": "Licor 43", "Vol": 31.0, "Menge": 40},
+        {"Name": "Batida de Côco", "Vol": 16.0, "Menge": 40}
+    ]
+
+    Filler = [
+        {"Name": "mit Coca-Cola", "Menge": 260},
+        {"Name": "mit Coca-Cola Zero", "Menge": 260},
+        {"Name": "mit Fanta", "Menge": 260},
+        {"Name": "mit Sprite", "Menge": 260},
+        {"Name": "mit Mezzo Mix", "Menge": 260},
+        {"Name": "mit Red Bull Energy", "Menge": 210},
+        {"Name": "mit Red Bull Sugarfree", "Menge": 210},
+        {"Name": "mit Schweppes Bitter Lemon", "Menge": 210},
+        {"Name": "mit Schweppes Tonic Water", "Menge": 210},
+        {"Name": "mit Schweppes Ginger Ale", "Menge": 210},
+        {"Name": "mit Thomas Henry Tonic", "Menge": 210},
+        {"Name": "mit Granini Orangensaft", "Menge": 260},
+        {"Name": "mit Granini Maracujasaft", "Menge": 260},
+        {"Name": "mit Granini Apfelsaft klar", "Menge": 260},
+        {"Name": "mit Schweppes Wild Berry", "Menge": 210},
+        {"Name": "mit Club Mate", "Menge": 260},
+        {"Name": "mit Sprudelwasser (Skinny Bitch)", "Menge": 260}
+    ]
+
+    Shots = [
+        {"Marke": "Berliner Luft", "Sorte": "Pfeffi Shot", "Vol": 18.0, "Menge": 20},
+        {"Marke": "Berliner Luft", "Sorte": "Pfeffi Doppelshot", "Vol": 18.0, "Menge": 40},
+        {"Marke": "Flimm", "Sorte": "Waldmeister Shot", "Vol": 15.0, "Menge": 20},
+        {"Marke": "Kleiner Feigling", "Sorte": "Original Klopfer", "Vol": 20.0, "Menge": 20},
+        {"Marke": "Kleiner Feigling", "Sorte": "Erdbeer Erdbeere", "Vol": 15.0, "Menge": 20},
+        {"Marke": "Sourz", "Sorte": "Apple Shot", "Vol": 15.0, "Menge": 20},
+        {"Marke": "Sourz", "Sorte": "Blackcurrant Shot", "Vol": 15.0, "Menge": 20},
+        {"Marke": "Ficken", "Sorte": "Johannisbeer-Partyschnaps", "Vol": 15.0, "Menge": 20},
+        {"Marke": "Dos Mas", "Sorte": "Mex Shot (Zimt)", "Vol": 15.0, "Menge": 20},
+        {"Marke": "Dos Mas", "Sorte": "Pink Shot (Beere)", "Vol": 15.0, "Menge": 20},
+        {"Marke": "Sierra Tequila", "Sorte": "Silber Shot", "Vol": 38.0, "Menge": 20},
+        {"Marke": "Sierra Tequila", "Sorte": "Gold Shot", "Vol": 38.0, "Menge": 20},
+        {"Marke": "Ouzo 12", "Sorte": "Shot", "Vol": 38.0, "Menge": 20},
+        {"Marke": "Sambuca Molinari", "Sorte": "Shot", "Vol": 40.0, "Menge": 40},
+        {"Marke": "Mexikaner", "Sorte": "Scharfer Tomatenshot (Hausgemacht)", "Vol": 15.0, "Menge": 20},
+        {"Marke": "B52", "Sorte": "Schichtshot", "Vol": 28.0, "Menge": 40}
+    ]
+
+    drinks = []
+    
+    for b in Brauereien:
+        for s in Sorten_Konfiguration:
+            drinks.append([b, s["Sorte"], s["Vol"], s["Menge"]])
+            
+    for m in Apfelwein_Marken:
+        for s in Apfelwein_Sorten:
+            drinks.append([m, s["Sorte"], s["Vol"], s["Menge"]])
+            
+    for sp in Spirituosen:
+        for f in Filler:
+            gesamtmenge = sp["Menge"] + f["Menge"]
+            alk_vol = round((sp["Menge"] * sp["Vol"]) / gesamtmenge, 2)
+            sorte_name = f'Longdrink {f["Name"]} ({gesamtmenge}ml)'
+            drinks.append([sp["Name"], sorte_name, alk_vol, gesamtmenge])
+            
+    for s in Shots:
+        drinks.append([s["Marke"], s["Sorte"], s["Vol"], s["Menge"]])
+        
+    return drinks
 
 # --- DATABASE HELPERS ---
 @st.cache_resource
@@ -185,7 +300,8 @@ def init_db():
             save_data(SHEET_USER_DB, df)
             
         elif sheet == SHEET_GETRAENKE_DB and df.empty:
-            drinks_df = pd.DataFrame(DEFAULT_DRINKS, columns=COLUMNS[SHEET_GETRAENKE_DB])
+            master_drinks = generate_master_drinks()
+            drinks_df = pd.DataFrame(master_drinks, columns=COLUMNS[SHEET_GETRAENKE_DB])
             save_data(SHEET_GETRAENKE_DB, drinks_df)
 
 # Run init on app startup
