@@ -642,7 +642,81 @@ def mein_abend_view():
     st.subheader("Deine Deckel")
     st.dataframe(my_logs[['Zeitstempel', 'Marke', 'Sorte', 'Menge_ml']], use_container_width=True, hide_index=True)
 
+def public_profile_view(uname):
+    st.button("🔙 Zurück zur Übersicht", on_click=lambda: st.session_state.pop('view_profile_of', None))
+    
+    st.title(f"Profil von {uname}")
+    
+    users_df = load_data(SHEET_USER_DB)
+    logs_df = load_data(SHEET_KONSUM_LOG)
+    
+    user_row = users_df[users_df['Username'] == uname]
+    if user_row.empty:
+        st.error("Benutzer nicht gefunden.")
+        return
+        
+    pic = user_row.iloc[0]['Profilbild_Url']
+    p_val = calc_promille(uname)
+    
+    col1, col2 = st.columns([0.2, 0.8])
+    with col1:
+        if pic.startswith("data:image"):
+            st.markdown(f'<img src="{pic}" style="border-radius: 50%; width: 100px; height: 100px; object-fit: cover;">', unsafe_allow_html=True)
+        else:
+            st.markdown(f"<h1 style='margin:0;'>{pic}</h1>", unsafe_allow_html=True)
+    with col2:
+        st.write(f"**Aktueller Promillewert:** {p_val} ‰")
+        user_logs = logs_df[logs_df['Username'] == uname].copy()
+        if not user_logs.empty:
+            fav_drink = user_logs['Marke'].value_counts().idxmax()
+            st.write(f"**Lieblingsgetränk:** {fav_drink}")
+    
+    st.divider()
+    
+    if user_logs.empty:
+        st.info("Noch keine Getränke verbucht.")
+        return
+        
+    user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
+    now = pd.Timestamp.now()
+    
+    all_time = len(user_logs)
+    this_year = len(user_logs[user_logs['Zeitstempel'].dt.year == now.year])
+    this_month = len(user_logs[(user_logs['Zeitstempel'].dt.year == now.year) & (user_logs['Zeitstempel'].dt.month == now.month)])
+    
+    start_of_week = now - pd.to_timedelta(now.dayofweek, unit='d')
+    start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+    this_week = len(user_logs[user_logs['Zeitstempel'] >= start_of_week])
+    
+    first_drink_date = user_logs['Zeitstempel'].min()
+    days_active = (now - first_drink_date).days + 1
+    avg_per_day = round(all_time / max(1, days_active), 2)
+    avg_per_active_day = round(user_logs.groupby(user_logs['Zeitstempel'].dt.date).size().mean(), 2)
+    
+    st.subheader("📊 Trink-Statistiken")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("All-Time", f"{all_time} 🍻")
+    c2.metric("Dieses Jahr", f"{this_year} 🍻")
+    c3.metric("Dieser Monat", f"{this_month} 🍻")
+    
+    c4, c5, c6 = st.columns(3)
+    c4.metric("Diese Woche", f"{this_week} 🍻")
+    c5.metric("Ø pro Tag (Gesamt)", f"{avg_per_day} 🍻")
+    c6.metric("Ø pro Party-Tag", f"{avg_per_active_day} 🍻")
+    
+    st.divider()
+    st.subheader("📈 Getränke über die Zeit")
+    
+    daily_counts = user_logs.groupby(user_logs['Zeitstempel'].dt.date).size().reset_index(name='Getränke')
+    daily_counts = daily_counts.set_index('Zeitstempel')
+    
+    st.bar_chart(daily_counts)
+
 def social_view():
+    if st.session_state.get('view_profile_of'):
+        public_profile_view(st.session_state.view_profile_of)
+        return
+        
     st.title("👑 Social & Stats")
     
     users_df = load_data(SHEET_USER_DB)
@@ -681,27 +755,9 @@ def social_view():
                     hours = diff.seconds // 3600
                     minutes = (diff.seconds % 3600) // 60
                     st.write(f"⏱️ **Letztes Getränk:** vor {days}T, {hours}h, {minutes}m")
-                    
-                    with st.expander("📊 Profil & Stats ansehen"):
-                        all_time = len(user_logs)
-                        this_year = len(user_logs[user_logs['Zeitstempel'].dt.year == now.year])
-                        this_month = len(user_logs[(user_logs['Zeitstempel'].dt.year == now.year) & (user_logs['Zeitstempel'].dt.month == now.month)])
-                        
-                        start_of_week = now - pd.to_timedelta(now.dayofweek, unit='d')
-                        start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
-                        this_week = len(user_logs[user_logs['Zeitstempel'] >= start_of_week])
-                        
-                        first_drink_date = user_logs['Zeitstempel'].min()
-                        days_active = (now - first_drink_date).days + 1
-                        avg_per_day = round(all_time / max(1, days_active), 2)
-                        avg_per_active_day = round(user_logs.groupby(user_logs['Zeitstempel'].dt.date).size().mean(), 2)
-                        
-                        st.markdown(f"**All-Time:** {all_time} 🍻")
-                        st.markdown(f"**Dieses Jahr:** {this_year} 🍻")
-                        st.markdown(f"**Dieser Monat:** {this_month} 🍻")
-                        st.markdown(f"**Diese Woche:** {this_week} 🍻")
-                        st.markdown(f"**Ø pro Tag (Gesamt):** {avg_per_day} 🍻")
-                        st.markdown(f"**Ø pro Party-Tag:** {avg_per_active_day} 🍻")
+                    if st.button("🔍 Profil ansehen", key=f"btn_{uname}", use_container_width=True):
+                        st.session_state.view_profile_of = uname
+                        st.rerun()
                 else:
                     st.write("⏱️ **Letztes Getränk:** -")
 
