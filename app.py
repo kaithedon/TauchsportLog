@@ -898,45 +898,53 @@ def admin_view():
     st.dataframe(logs_df, use_container_width=True)
     
     with st.container(border=True):
-        st.markdown("<h3>🍷 Wein-Matrix Importieren</h3>", unsafe_allow_html=True)
-        st.write("Fügt die große Liste an Weinen, Sekts und Schorlen zur Datenbank hinzu.")
-        if st.button("Jetzt Weine importieren"):
-            Wein_Sorten = [
+        st.markdown("<h3>🍻 Erweiterte Getränke-Matrix Importieren</h3>", unsafe_allow_html=True)
+        st.write("Fügt die große Liste an internationalen Bieren und Weinen zur Datenbank hinzu.")
+        if st.button("Jetzt Getränke-Erweiterung importieren"):
+            neue_brauereien_int = [
+                "Pilsner Urquell", "Budweiser Budvar", "Staropramen", "Krušovice", "Gambrinus",
+                "Stella Artois", "Leffe (Blond/Bruin)", "Chouffe", "Duvel", "Grimbergen", 
+                "Hoegaarden", "Chimay", "Delirium Tremens", "Kastel Beer",
+                "John Smith's", "Newcastle Brown Ale", "London Pride", "Sharp's Doom Bar", 
+                "BrewDog (Punk IPA)", "Stiegl", "Zipfer", "Ottakringer", "Gösser", "Puntigamer", 
+                "Wieselburger", "Feldschlösschen", "Calanda", "Quöllfrisch", "Amstel", "Grolsch", 
+                "Bavaria", "Hertog Jan", "Diekirch", "Bofferding", "Kronenbourg 1664", "Pelforth", 
+                "Fischer", "San Miguel", "Estrella Damm", "Cruzcampo", "Mahou", "Alhambra", 
+                "Super Bock", "Sagres", "Peroni (Nastro Azzurro)", "Moretti", "Ichnusa", "Messina", 
+                "Carlsberg", "Tuborg", "Mikkeller", "Lapin Kulta", "Norrlands Guld", "Saku", 
+                "Švyturys", "Miller Genuine Draft", "Coors Light", "Samuel Adams", "Brooklyn Brewery", 
+                "Asahi Super Dry", "Sapporo", "Tsingtao", "Tiger Beer", "Singha", "Chang", "Quilmes"
+            ]
+
+            neue_sorten_int = [
+                {"Sorte": "Lager / Pils", "Vol": 5.0, "Menge": 330, "Preis": 3.00},
+                {"Sorte": "Pale Ale / IPA", "Vol": 6.2, "Menge": 330, "Preis": 3.80},
+                {"Sorte": "Belgian Blonde / Wit", "Vol": 6.6, "Menge": 330, "Preis": 4.00},
+                {"Sorte": "Stout / Porter", "Vol": 4.5, "Menge": 440, "Preis": 3.50},
+                {"Sorte": "Apple Cider", "Vol": 4.5, "Menge": 500, "Preis": 3.50},
+                {"Sorte": "Strong Ale (Triple)", "Vol": 8.5, "Menge": 330, "Preis": 4.50}
+            ]
+
+            neue_wein_sorten = [
                 {"Marke": "Hauswein Weiß", "Kategorie": "Weißwein (Standard)", "Vol": 12.0},
                 {"Marke": "Hauswein Rot", "Kategorie": "Rotwein (Standard)", "Vol": 13.0},
                 {"Marke": "Hauswein Rosé", "Kategorie": "Roséwein (Standard)", "Vol": 12.0},
                 {"Marke": "Sekt (Hausmarke)", "Kategorie": "Schaumwein (Standard)", "Vol": 11.0},
                 {"Marke": "Prosecco (Hausmarke)", "Kategorie": "Schaumwein (Standard)", "Vol": 10.5},
-                {"Marke": "Glühwein", "Kategorie": "Heißgetränk (Winter-Special)", "Vol": 10.5},
+                {"Marke": "Glühwein", "Kategorie": "Heißgetränk", "Vol": 10.5},
                 {"Marke": "Grauburgunder", "Kategorie": "Weißwein", "Vol": 12.5},
                 {"Marke": "Riesling", "Kategorie": "Weißwein", "Vol": 12.0},
                 {"Marke": "Chardonnay", "Kategorie": "Weißwein", "Vol": 13.0},
                 {"Marke": "Sauvignon Blanc", "Kategorie": "Weißwein", "Vol": 12.5},
-                {"Marke": "Weißburgunder", "Kategorie": "Weißwein", "Vol": 12.5},
-                {"Marke": "Lugana", "Kategorie": "Weißwein", "Vol": 13.0},
-                {"Marke": "Müller-Thurgau", "Kategorie": "Weißwein", "Vol": 11.5},
                 {"Marke": "Primitivo", "Kategorie": "Rotwein", "Vol": 13.5},
                 {"Marke": "Merlot", "Kategorie": "Rotwein", "Vol": 13.0},
                 {"Marke": "Cabernet Sauvignon", "Kategorie": "Rotwein", "Vol": 14.0},
-                {"Marke": "Spätburgunder (Pinot Noir)", "Kategorie": "Rotwein", "Vol": 13.0},
-                {"Marke": "Chianti", "Kategorie": "Rotwein", "Vol": 12.5},
-                {"Marke": "Rioja", "Kategorie": "Rotwein", "Vol": 13.5},
-                {"Marke": "Dornfelder", "Kategorie": "Rotwein", "Vol": 12.0},
                 {"Marke": "Provence Rosé", "Kategorie": "Roséwein", "Vol": 12.5},
-                {"Marke": "Weißherbst", "Kategorie": "Roséwein", "Vol": 11.5},
-                {"Marke": "Grenache Rosé", "Kategorie": "Roséwein", "Vol": 12.0},
-                {"Marke": "Chiaretto", "Kategorie": "Roséwein", "Vol": 12.5},
-                {"Marke": "Rotkäppchen Sekt", "Kategorie": "Sekt Halbtrocken", "Vol": 11.0},
-                {"Marke": "Mumm Sekt", "Kategorie": "Sekt Extra Trocken", "Vol": 11.5},
-                {"Marke": "Henkell Trocken", "Kategorie": "Sekt", "Vol": 11.5},
-                {"Marke": "Freixenet", "Kategorie": "Cava", "Vol": 11.5},
-                {"Marke": "Prosecco Spumante", "Kategorie": "Schaumwein", "Vol": 11.0},
-                {"Marke": "Moët & Chandon", "Kategorie": "Champagner", "Vol": 12.0},
-                {"Marke": "Veuve Clicquot", "Kategorie": "Champagner", "Vol": 12.0},
-                {"Marke": "Asti Spumante", "Kategorie": "Süßer Schaumwein", "Vol": 7.0}
+                {"Marke": "Rotkäppchen Sekt", "Kategorie": "Sekt", "Vol": 11.0},
+                {"Marke": "Moët & Chandon", "Kategorie": "Champagner", "Vol": 12.0}
             ]
 
-            Darreichungsformen = [
+            neue_wein_formen = [
                 {"Typ": "Glas (klein/0.2l)", "Menge": 200, "Preis": 4.00, "Vol_Anpassung": 1.0},
                 {"Typ": "Glas (groß/0.25l)", "Menge": 250, "Preis": 5.00, "Vol_Anpassung": 1.0},
                 {"Typ": "Flasche (0.75l)", "Menge": 750, "Preis": 15.00, "Vol_Anpassung": 1.0},
@@ -945,8 +953,20 @@ def admin_view():
             ]
 
             new_drinks = []
-            for w in Wein_Sorten:
-                for d in Darreichungsformen:
+            
+            # Biere kombinieren
+            for b in neue_brauereien_int:
+                for s in neue_sorten_int:
+                    new_drinks.append({
+                        "Marke": b,
+                        "Sorte": s["Sorte"],
+                        "Alkoholgehalt_Vol": round(s["Vol"], 2),
+                        "Standard_Menge_ml": s["Menge"]
+                    })
+                    
+            # Weine kombinieren
+            for w in neue_wein_sorten:
+                for d in neue_wein_formen:
                     calc_vol = w["Vol"] * d["Vol_Anpassung"]
                     new_drinks.append({
                         "Marke": w["Marke"],
@@ -958,9 +978,15 @@ def admin_view():
             df = load_data(SHEET_GETRAENKE_DB)
             df_new = pd.DataFrame(new_drinks)
             df_combined = pd.concat([df, df_new], ignore_index=True)
-            df_combined.drop_duplicates(subset=["Marke", "Sorte", "Standard_Menge_ml"], keep="last", inplace=True)
+            
+            # Nur echte Duplikate löschen, alte Sachen unberührt lassen! keep='first' erhält die alten
+            df_combined.drop_duplicates(subset=["Marke", "Sorte", "Standard_Menge_ml"], keep="first", inplace=True)
+            
+            # Alphabetisch sortieren nach Marke
+            df_combined.sort_values(by=["Marke", "Sorte"], inplace=True)
+            
             save_data(SHEET_GETRAENKE_DB, df_combined)
-            st.success("Wines imported successfully! You can remove this button now.")
+            st.success("Erweiterung erfolgreich importiert! Die alten Daten sind sicher und alles ist alphabetisch sortiert.")
             
     with st.container(border=True):
         st.markdown("<h3 style='color: #ff4b4b;'>🚨 Abend beenden & Nullen</h3>", unsafe_allow_html=True)
