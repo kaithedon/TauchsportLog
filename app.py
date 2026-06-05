@@ -723,6 +723,12 @@ def public_profile_view(uname):
     daily_counts = daily_counts.set_index('Zeitstempel')
     
     st.bar_chart(daily_counts)
+    
+    st.divider()
+    st.subheader("📜 Buchungs-Historie")
+    display_logs = user_logs[['Zeitstempel', 'Marke', 'Sorte', 'Menge_ml']].copy()
+    display_logs = display_logs.sort_values(by='Zeitstempel', ascending=False)
+    st.dataframe(display_logs, hide_index=True, use_container_width=True)
 
 def social_view():
     if st.session_state.get('view_profile_of'):
@@ -733,6 +739,19 @@ def social_view():
     
     users_df = load_data(SHEET_USER_DB)
     logs_df = load_data(SHEET_KONSUM_LOG)
+    
+    # --- LIVE FEED ---
+    recent_logs = logs_df.copy()
+    if not recent_logs.empty:
+        recent_logs['Zeitstempel'] = pd.to_datetime(recent_logs['Zeitstempel'])
+        recent_logs = recent_logs.sort_values(by='Zeitstempel', ascending=False).head(5)
+        now = pd.Timestamp.now()
+        feed_texts = []
+        for _, r in recent_logs.iterrows():
+            diff = now - r['Zeitstempel']
+            mins = int(diff.total_seconds() // 60)
+            feed_texts.append(f"**{r['Username']}** ({r['Marke']}, vor {mins}m)")
+        st.info("⚡ **Live Feed:** " + " • ".join(feed_texts))
     
     active_users = []
     sober_users = []
@@ -772,9 +791,9 @@ def social_view():
             with (c1 if i % 2 == 0 else c2):
                 with st.container(border=True):
                     if pic.startswith("data:image"):
-                        img_html = f'<img src="{pic}" style="border-radius: 50%; width: 40px; height: 40px; object-fit: cover; margin-right: 10px;">'
+                        img_html = f'<img src="{pic}" style="border-radius: 50%; width: 35px; height: 35px; object-fit: cover; margin-right: 8px;">'
                     else:
-                        img_html = f'<span style="font-size: 25px; margin-right: 5px;">{pic}</span>'
+                        img_html = f'<span style="font-size: 22px; margin-right: 5px;">{pic}</span>'
                         
                     is_active = False
                     if not user_logs.empty:
@@ -785,21 +804,21 @@ def social_view():
                         if diff.total_seconds() <= 30 * 60:
                             is_active = True
                             
-                    status_badge = '<span style="color: #28a745; font-size: 0.75em; margin-left: auto; font-weight: bold;">🟢 Aktiv</span>' if is_active else '<span style="color: #6c757d; font-size: 0.75em; margin-left: auto;">⚪ Inaktiv</span>'
+                    status_badge = '<span style="color: #28a745; font-size: 0.7em; margin-left: auto; font-weight: bold;">🟢 Aktiv</span>' if is_active else '<span style="color: #6c757d; font-size: 0.7em; margin-left: auto;">⚪ Inaktiv</span>'
                         
-                    st.markdown(f'<div style="display:flex; align-items:center; margin-bottom: 8px;">{img_html}<strong style="font-size:1.2em;">{uname}</strong>{status_badge}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div style="display:flex; align-items:center; margin-bottom: 2px;">{img_html}<strong style="font-size:1.0em;">{uname}</strong>{status_badge}</div>', unsafe_allow_html=True)
                     
                     if not user_logs.empty:
                         days = diff.days
                         hours = diff.seconds // 3600
                         minutes = (diff.seconds % 3600) // 60
                         
-                        st.markdown(f"<div style='line-height:1.2; margin-bottom: 10px;'><small><b>Promille:</b> <span style='color:#ff4b4b;'>{p_val} ‰</span><br><b>Fav:</b> {fav_drink}<br><b>Zuletzt:</b> vor {days}T {hours}h {minutes}m</small></div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='line-height:1.1; margin-bottom: 5px;'><small><b>P:</b> <span style='color:#ff4b4b;'>{p_val}‰</span> | <b>Fav:</b> {fav_drink}<br><b>Zuletzt:</b> vor {days}T {hours}h {minutes}m</small></div>", unsafe_allow_html=True)
                         if st.button("📊 Profil", key=f"btn_{uname}", use_container_width=True):
                             st.session_state.view_profile_of = uname
                             st.rerun()
                     else:
-                        st.markdown(f"<div style='line-height:1.2; margin-bottom: 10px;'><small><b>Promille:</b> {p_val} ‰<br><b>Zuletzt:</b> -</small></div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='line-height:1.1; margin-bottom: 5px;'><small><b>P:</b> {p_val}‰<br><b>Zuletzt:</b> -</small></div>", unsafe_allow_html=True)
 
     st.subheader("Knülle (> 0.0 ‰)")
     active_users = sorted(active_users, key=lambda x: x['p_val'], reverse=True)
