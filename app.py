@@ -303,8 +303,8 @@ def get_symptom_info(promille):
 # --- VIEWS ---
 def login_view():
     try:
-        st.image("banner.png", use_container_width=True)
-    except Exception:
+        st.image("banner.png", use_column_width=True)
+    except Exception as e:
         st.markdown("<h1 style='text-align: center;'>🤿 Tauchsportclub<br>Deep Dive Counter</h1>", unsafe_allow_html=True)
     
     tab1, tab2 = st.tabs(["Login", "Registrierung"])
@@ -540,6 +540,75 @@ def admin_view():
             else:
                 st.info("Log ist bereits leer.")
 
+def profil_view():
+    st.title("👤 Mein Profil")
+    users_df = load_data(SHEET_USER_DB)
+    user_row = users_df[users_df['Username'] == st.session_state.username]
+    if user_row.empty:
+        st.error("Profil nicht gefunden.")
+        return
+        
+    user_idx = user_row.index[0]
+    curr_data = user_row.iloc[0]
+    
+    tab_data, tab_pw = st.tabs(["Profildaten ändern", "Passwort ändern"])
+    
+    with tab_data:
+        with st.form("profil_form"):
+            new_gew = st.number_input("Gewicht (kg)", min_value=30.0, max_value=200.0, value=float(curr_data['Gewicht_kg']))
+            new_groesse = st.number_input("Größe (cm)", min_value=120, max_value=230, value=int(curr_data['Groesse_cm']))
+            
+            st.write("Aktuelles Profilbild:")
+            if str(curr_data['Profilbild_Url']).startswith("data:image"):
+                st.markdown(f'<img src="{curr_data["Profilbild_Url"]}" style="border-radius: 50%; width: 60px; height: 60px; object-fit: cover;">', unsafe_allow_html=True)
+            else:
+                st.write(curr_data['Profilbild_Url'])
+                
+            st.write("Neues Profilbild auswählen oder hochladen:")
+            r_pic_emoji = st.selectbox("Emoji-Avatar", ["Beibehalten", "🤿", "🦈", "🐙", "🍺", "🍹", "🐋"])
+            r_pic_file = st.file_uploader("Oder neues Bild hochladen", type=["jpg", "jpeg", "png"])
+            
+            if st.form_submit_button("Profil speichern"):
+                profilbild = curr_data['Profilbild_Url']
+                if r_pic_emoji != "Beibehalten":
+                    profilbild = r_pic_emoji
+                    
+                if r_pic_file is not None:
+                    try:
+                        img = Image.open(r_pic_file)
+                        img.thumbnail((150, 150))
+                        if img.mode in ("RGBA", "P"): img = img.convert("RGB")
+                        buffer = io.BytesIO()
+                        img.save(buffer, format="JPEG", quality=70)
+                        encoded = base64.b64encode(buffer.getvalue()).decode("utf-8")
+                        profilbild = f"data:image/jpeg;base64,{encoded}"
+                    except:
+                        st.warning("Fehler beim Bild-Upload.")
+                
+                users_df.at[user_idx, 'Gewicht_kg'] = new_gew
+                users_df.at[user_idx, 'Groesse_cm'] = new_groesse
+                users_df.at[user_idx, 'Profilbild_Url'] = profilbild
+                save_data(SHEET_USER_DB, users_df)
+                st.success("Profil erfolgreich aktualisiert!")
+                
+    with tab_pw:
+        with st.form("pw_form"):
+            old_pw = st.text_input("Altes Passwort", type="password")
+            new_pw = st.text_input("Neues Passwort", type="password")
+            new_pw2 = st.text_input("Neues Passwort bestätigen", type="password")
+            
+            if st.form_submit_button("Passwort ändern"):
+                if not old_pw or not new_pw:
+                    st.error("Bitte alle Felder ausfüllen.")
+                elif new_pw != new_pw2:
+                    st.error("Die neuen Passwörter stimmen nicht überein.")
+                elif hashlib.sha256(old_pw.encode()).hexdigest() != curr_data['Password_Hash']:
+                    st.error("Altes Passwort ist falsch.")
+                else:
+                    users_df.at[user_idx, 'Password_Hash'] = hashlib.sha256(new_pw.encode()).hexdigest()
+                    save_data(SHEET_USER_DB, users_df)
+                    st.success("Passwort erfolgreich geändert!")
+
 # --- MAIN LOGIC ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
@@ -548,13 +617,13 @@ if not st.session_state.logged_in:
     login_view()
 else:
     try:
-        st.image("banner.png", use_container_width=True)
-    except Exception:
+        st.image("banner.png", use_column_width=True)
+    except Exception as e:
         pass
         
     # Top Navigation Bar
     st.write(f"Willkommen, **{st.session_state.username}** 🤿")
-    menu = ["Getränke buchen", "Promille Status", "Social & Stats"]
+    menu = ["Getränke buchen", "Promille Status", "Social & Stats", "Mein Profil"]
     if st.session_state.role == "Admin":
         menu.append("Admin-Bereich")
         
@@ -575,6 +644,8 @@ else:
         mein_abend_view()
     elif choice == "Social & Stats":
         social_view()
+    elif choice == "Mein Profil":
+        profil_view()
     elif choice == "Admin-Bereich":
         admin_view()
 
