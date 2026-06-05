@@ -775,7 +775,7 @@ def statistik_view():
         total_ml = pd.to_numeric(user_logs['Menge_ml'], errors='coerce').sum()
         gesamt_liter = round(total_ml / 1000, 2)
         
-        user_logs.loc[:, 'Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
+        user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
         now = pd.Timestamp.now()
         first_drink_date = user_logs['Zeitstempel'].min()
         days_active = (now - first_drink_date).days + 1
@@ -1016,7 +1016,7 @@ def social_view():
             uname = u["uname"]
             pic = u["pic"]
             p_val = u["p_val"]
-            user_logs = u["user_logs"]
+            user_logs = u["user_logs"].copy()
             
             fav_drink = "-"
             if not user_logs.empty:
