@@ -319,10 +319,10 @@ def hash_password(password):
 def login_user(username, password, is_hashed=False):
     users_df = load_data(SHEET_USER_DB)
     pwd_hash = password if is_hashed else hash_password(password)
-    user = users_df[(users_df['Username'] == username) & (users_df['Password_Hash'] == pwd_hash)]
+    user = users_df[(users_df['Username'].str.lower() == username.lower()) & (users_df['Password_Hash'] == pwd_hash)]
     if not user.empty:
         st.session_state.logged_in = True
-        st.session_state.username = username
+        st.session_state.username = user.iloc[0]['Username']
         st.session_state.role = user.iloc[0]['Rolle']
         st.session_state.gewicht = float(user.iloc[0]['Gewicht_kg'])
         st.session_state.groesse = float(user.iloc[0]['Groesse_cm'])
@@ -332,7 +332,7 @@ def login_user(username, password, is_hashed=False):
 
 def register_user(username, password, gewicht, groesse, geschlecht, profilbild):
     users_df = load_data(SHEET_USER_DB)
-    if username in users_df['Username'].values:
+    if not users_df.empty and username.lower() in users_df['Username'].str.lower().values:
         return False, "Username bereits vergeben."
     
     pwd_hash = hash_password(password)
