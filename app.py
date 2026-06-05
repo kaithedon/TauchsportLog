@@ -23,6 +23,14 @@ st.set_page_config(
 # --- STYLING ---
 st.markdown("""
     <style>
+    /* Layout/Padding Fix für Mobilgeräte */
+    .block-container {
+        padding-left: 0.8rem !important;
+        padding-right: 0.8rem !important;
+        padding-top: 1.5rem !important;
+        padding-bottom: 1.5rem !important;
+    }
+    
     /* Storno Button Special */
     .storno-btn>button {
         border-color: #ff4b4b !important;
