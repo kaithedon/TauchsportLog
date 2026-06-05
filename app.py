@@ -1041,40 +1041,7 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
         
     st.write("")
     
-    # --- LIKE BUTTON ---
-    likes_str = str(story.get('likes', ''))
-    if likes_str.lower() == 'nan': likes_str = ''
-    liked_by = [u.strip() for u in likes_str.split(',') if u.strip()]
-    
-    i_liked = st.session_state.username in liked_by
-    like_icon = "❤️" if i_liked else "🤍"
-    like_text = f"{like_icon} Gefällt mir ({len(liked_by)})"
-    
-    if st.button(like_text, type="primary" if i_liked else "secondary", use_container_width=True):
-        if i_liked:
-            liked_by.remove(st.session_state.username)
-        else:
-            liked_by.append(st.session_state.username)
-        
-        stories_df = load_data(SHEET_STORIES)
-        if 'likes' not in stories_df.columns:
-            stories_df['likes'] = ""
-            
-        target_dt = pd.to_datetime(story['timestamp'])
-        stories_df['dt'] = pd.to_datetime(stories_df['timestamp'])
-        
-        match_idx = stories_df[(stories_df['username'] == username) & (stories_df['dt'] == target_dt)].index
-        if not match_idx.empty:
-            stories_df.at[match_idx[0], 'likes'] = ",".join(liked_by)
-            stories_df = stories_df.drop(columns=['dt'])
-            save_data(SHEET_STORIES, stories_df)
-            st.rerun()
-
-    if liked_by:
-        st.markdown(f"<p style='font-size:12px; color:gray;'>Gefällt: {', '.join(liked_by)}</p>", unsafe_allow_html=True)
-    
-    st.write("---")
-    
+    # --- NAVIGATION & DELETE BUTTONS ---
     col1, col2, col3 = st.columns([1, 1, 1])
     
     curr_user_idx = ordered_active_users.index(username)
@@ -1083,7 +1050,7 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
     
     with col1:
         if has_prev:
-            if st.button("◀", use_container_width=True):
+            if st.button("◀ Zurück", use_container_width=True):
                 if story_idx > 0:
                     st.query_params["view_story"] = username
                     st.query_params["story_idx"] = str(story_idx - 1)
@@ -1094,7 +1061,6 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                 st.rerun()
             
     with col2:
-        st.write("") # Padding
         if username == st.session_state.username:
             col_del1, col_del2, col_del3 = st.columns([1, 2, 1])
             with col_del2:
@@ -1126,7 +1092,7 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                     
     with col3:
         if has_next:
-            if st.button("▶", use_container_width=True):
+            if st.button("Weiter ▶", use_container_width=True):
                 if story_idx < len(user_stories_df) - 1:
                     st.query_params["view_story"] = username
                     st.query_params["story_idx"] = str(story_idx + 1)
@@ -1135,6 +1101,44 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                     st.query_params["view_story"] = next_user
                     st.query_params["story_idx"] = "0"
                 st.rerun()
+
+    st.write("---")
+
+    # --- LIKE BUTTON ---
+    likes_str = str(story.get('likes', ''))
+    if likes_str.lower() == 'nan': likes_str = ''
+    liked_by = [u.strip() for u in likes_str.split(',') if u.strip()]
+    
+    i_liked = st.session_state.username in liked_by
+    like_icon = "❤️" if i_liked else "🤍"
+    like_text = f"{like_icon} Gefällt mir ({len(liked_by)})"
+    
+    if st.button(like_text, type="primary" if i_liked else "secondary", use_container_width=True):
+        if i_liked:
+            liked_by.remove(st.session_state.username)
+        else:
+            liked_by.append(st.session_state.username)
+        
+        stories_df = load_data(SHEET_STORIES)
+        if 'likes' not in stories_df.columns:
+            stories_df['likes'] = ""
+            
+        target_dt = pd.to_datetime(story['timestamp'])
+        stories_df['dt'] = pd.to_datetime(stories_df['timestamp'])
+        
+        match_idx = stories_df[(stories_df['username'] == username) & (stories_df['dt'] == target_dt)].index
+        if not match_idx.empty:
+            stories_df.at[match_idx[0], 'likes'] = ",".join(liked_by)
+            stories_df = stories_df.drop(columns=['dt'])
+            save_data(SHEET_STORIES, stories_df)
+            
+            # MUST restore query params before rerun to keep dialog open!
+            st.query_params["view_story"] = username
+            st.query_params["story_idx"] = str(story_idx)
+            st.rerun()
+
+    if liked_by:
+        st.markdown(f"<p style='font-size:12px; color:gray; text-align:center;'>Gefällt: {', '.join(liked_by)}</p>", unsafe_allow_html=True)
 
 def render_stories_bar():
     # Load all users and stories
