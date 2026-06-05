@@ -729,7 +729,7 @@ def social_view():
         public_profile_view(st.session_state.view_profile_of)
         return
         
-    st.title("👑 Social & Stats")
+    st.title("Live")
     
     users_df = load_data(SHEET_USER_DB)
     logs_df = load_data(SHEET_KONSUM_LOG)
@@ -801,13 +801,13 @@ def social_view():
                     else:
                         st.markdown(f"<div style='line-height:1.2; margin-bottom: 10px;'><small><b>Promille:</b> {p_val} ‰<br><b>Zuletzt:</b> -</small></div>", unsafe_allow_html=True)
 
-    st.subheader("🎉 Knülle (> 0.0 ‰)")
+    st.subheader("Knülle (> 0.0 ‰)")
     active_users = sorted(active_users, key=lambda x: x['p_val'], reverse=True)
     render_user_cards(active_users)
     
     st.divider()
     
-    st.subheader("🧊 Nüchtern (0.0 ‰)")
+    st.subheader("Nüchtern (0.0 ‰)")
     render_user_cards(sober_users)
 
     st.divider()
@@ -962,8 +962,8 @@ else:
             st.session_state.logged_in = False
             st.rerun()
             
-    menu = ["Getränke buchen", "Promille Status", "Social & Stats", "Mein Profil"]
-    icons = ["cup-hot", "activity", "people", "person"]
+    menu = ["Live", "Getränke buchen", "Promille Status", "Mein Profil"]
+    icons = ["people", "cup-hot", "activity", "person"]
     if st.session_state.role == "Admin":
         menu.append("Admin-Bereich")
         icons.append("gear")
@@ -987,7 +987,7 @@ else:
         buchung_view()
     elif choice == "Promille Status":
         mein_abend_view()
-    elif choice == "Social & Stats":
+    elif choice == "Live":
         social_view()
     elif choice == "Mein Profil":
         profil_view()
