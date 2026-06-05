@@ -1094,10 +1094,12 @@ def render_story_view(username, story_idx, user_stories_df, ordered_active_users
             if 'likes' not in stories_df.columns:
                 stories_df['likes'] = ""
                 
-            # Match by username and first 50 chars of image data to be absolutely robust
-            img_prefix = str(story['image_data'])[:50]
-            stories_df['img_str'] = stories_df['image_data'].astype(str)
-            match_idx = stories_df[(stories_df['username'] == username) & (stories_df['img_str'].str.startswith(img_prefix))].index
+            # Match by exact timestamp to avoid base64 header collisions
+            match_idx = stories_df[(stories_df['username'] == username) & (stories_df['timestamp'].astype(str) == str(story['timestamp']))].index
+            
+            # Fallback to exact image data match if timestamp mismatch happens
+            if match_idx.empty:
+                match_idx = stories_df[(stories_df['username'] == username) & (stories_df['image_data'] == story['image_data'])].index
             
             if not match_idx.empty:
                 new_likes_str = ",".join(liked_by)
