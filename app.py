@@ -778,32 +778,28 @@ def statistik_view():
     stats_df.index.name = "Rang"
     stats_df = stats_df.reset_index()
     
-    st.dataframe(stats_df, use_container_width=True, hide_index=True)
-    
     st.divider()
-    st.subheader("📈 All-Time Getränke Verlauf")
+    st.subheader("📈 Live-Verlauf (All-Time Getränke)")
     
     if not logs_df.empty:
         chart_df = logs_df.copy()
         chart_df['Zeitstempel'] = pd.to_datetime(chart_df['Zeitstempel'])
-        chart_df['Datum'] = chart_df['Zeitstempel'].dt.date
+        chart_df['Count'] = 1
         
-        daily_user_counts = chart_df.groupby(['Datum', 'Username']).size().reset_index(name='Getränke')
+        # Gruppieren nach exaktem Zeitstempel für Live-Verfolgung über den Tag
+        pivot_counts = chart_df.pivot_table(
+            index='Zeitstempel', 
+            columns='Username', 
+            values='Count', 
+            aggfunc='sum'
+        ).fillna(0)
         
-        all_dates = pd.date_range(start=daily_user_counts['Datum'].min(), end=daily_user_counts['Datum'].max())
-        all_users = daily_user_counts['Username'].unique()
+        cumulative_drinks = pivot_counts.cumsum()
+        st.line_chart(cumulative_drinks)
         
-        idx = pd.MultiIndex.from_product([all_dates.date, all_users], names=['Datum', 'Username'])
-        full_grid = pd.DataFrame(index=idx).reset_index()
-        
-        merged = pd.merge(full_grid, daily_user_counts, on=['Datum', 'Username'], how='left').fillna(0)
-        
-        merged = merged.sort_values(['Username', 'Datum'])
-        merged['All-Time Getränke'] = merged.groupby('Username')['Getränke'].cumsum()
-        
-        pivot_df = merged.pivot(index='Datum', columns='Username', values='All-Time Getränke')
-        
-        st.line_chart(pivot_df)
+    st.divider()
+    st.subheader("📋 Rangliste")
+    st.dataframe(stats_df, use_container_width=True, hide_index=True)
 
 def public_profile_view(uname):
     st.button("🔙 Zurück zur Übersicht", on_click=lambda: st.session_state.pop('view_profile_of', None))
