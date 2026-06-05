@@ -743,15 +743,16 @@ def social_view():
     # --- LIVE FEED ---
     recent_logs = logs_df.copy()
     if not recent_logs.empty:
+        st.subheader("⚡ Live Feed")
         recent_logs['Zeitstempel'] = pd.to_datetime(recent_logs['Zeitstempel'])
-        recent_logs = recent_logs.sort_values(by='Zeitstempel', ascending=False).head(5)
+        recent_logs = recent_logs.sort_values(by='Zeitstempel', ascending=False).head(100)
         now = pd.Timestamp.now()
-        feed_texts = []
-        for _, r in recent_logs.iterrows():
-            diff = now - r['Zeitstempel']
-            mins = int(diff.total_seconds() // 60)
-            feed_texts.append(f"**{r['Username']}** ({r['Marke']}, vor {mins}m)")
-        st.info("⚡ **Live Feed:** " + " • ".join(feed_texts))
+        
+        with st.container(height=150):
+            for _, r in recent_logs.iterrows():
+                diff = now - r['Zeitstempel']
+                mins = int(diff.total_seconds() // 60)
+                st.markdown(f"**{r['Username']}** trank **{r['Marke']}** <small style='color:gray;'>(vor {mins}m)</small>", unsafe_allow_html=True)
     
     active_users = []
     sober_users = []
