@@ -11,6 +11,10 @@ import io
 from PIL import Image
 from streamlit_option_menu import option_menu
 from tenacity import retry, wait_exponential, stop_after_attempt
+import pytz
+
+def get_now_berlin():
+    return datetime.datetime.now(pytz.timezone('Europe/Berlin')).replace(tzinfo=None)
 
 # --- PAGE CONFIG ---
 st.set_page_config(
@@ -335,7 +339,7 @@ def register_user(username, password, gewicht, groesse, geschlecht, profilbild, 
     # Mark code as used
     codes_df.loc[codes_df['Code'] == activation_code, 'Used'] = "TRUE"
     codes_df.loc[codes_df['Code'] == activation_code, 'Used_By'] = username
-    codes_df.loc[codes_df['Code'] == activation_code, 'Used_At'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    codes_df.loc[codes_df['Code'] == activation_code, 'Used_At'] = get_now_berlin().strftime("%Y-%m-%d %H:%M:%S")
     save_data(SHEET_ACTIVATION_CODES, codes_df)
     
     pwd_hash = hash_password(password)
@@ -376,7 +380,7 @@ def calc_promille(username):
     logs_df['Zeitstempel'] = pd.to_datetime(logs_df['Zeitstempel'])
     
     # Consider only last 24h
-    now = datetime.datetime.now()
+    now = get_now_berlin()
     cutoff = now - datetime.timedelta(hours=24)
     user_logs = logs_df[(logs_df['Username'].astype(str).str.strip().str.lower() == str(username).strip().lower()) & (logs_df['Zeitstempel'] >= cutoff)]
     
@@ -498,14 +502,14 @@ def generate_whatsapp_link(username, anzahl, marke, sorte, nr_heute, nr_jahr):
         f"_{sorte}_\n"
         f"\n"
         f"Heute: {heute_visual}\n"
-        f"{datetime.datetime.now().year}: {nr_jahr} Bier insgesamt"
+        f"{get_now_berlin().year}: {nr_jahr} Bier insgesamt"
     )
     encoded = urllib.parse.quote(msg)
     return f"https://wa.me/?text={encoded}"
 
 def book_drink_now(marke, sorte, menge, alk_vol, anzahl=1, buchungs_zeit=None):
     if buchungs_zeit is None:
-        buchungs_zeit = datetime.datetime.now()
+        buchungs_zeit = get_now_berlin()
     logs_df = load_data(SHEET_KONSUM_LOG)
     new_logs = []
     for _ in range(anzahl):
@@ -602,11 +606,11 @@ def buchung_view():
             anzahl = st.number_input("Anzahl", min_value=1, max_value=10, value=1, key="anz_db")
             
             mode = st.radio("Zeitpunkt", ["Jetzt live einbuchen", "Nachtragen"], key="mode_db")
-            buchungs_zeit = datetime.datetime.now()
+            buchungs_zeit = get_now_berlin()
             if mode == "Nachtragen":
                 manual_time = st.time_input("Uhrzeit auswählen", key="time_db")
                 buchungs_zeit = datetime.datetime.combine(datetime.date.today(), manual_time)
-                if buchungs_zeit > datetime.datetime.now():
+                if buchungs_zeit > get_now_berlin():
                     buchungs_zeit -= datetime.timedelta(days=1)
                     
             if st.button("Einlochen 🎯", use_container_width=True, key="btn_db"):
@@ -642,11 +646,11 @@ def buchung_view():
                 
             anzahl2 = st.number_input("Anzahl", min_value=1, max_value=10, value=1, key="anz_m")
             mode2 = st.radio("Zeitpunkt", ["Jetzt live einbuchen", "Nachtragen"], key="mode_m")
-            buchungs_zeit2 = datetime.datetime.now()
+            buchungs_zeit2 = get_now_berlin()
             if mode2 == "Nachtragen":
                 manual_time2 = st.time_input("Uhrzeit auswählen", key="time_m")
                 buchungs_zeit2 = datetime.datetime.combine(datetime.date.today(), manual_time2)
-                if buchungs_zeit2 > datetime.datetime.now():
+                if buchungs_zeit2 > get_now_berlin():
                     buchungs_zeit2 -= datetime.timedelta(days=1)
                     
             if st.button("Trinken & für alle Speichern 🎯", use_container_width=True, key="btn_m"):
@@ -1283,7 +1287,7 @@ def admin_view():
                 backup_df = load_data(SHEET_BACKUP_HISTORY)
                 
                 # Add backup timestamp
-                logs_df['Backup_Zeitstempel'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                logs_df['Backup_Zeitstempel'] = get_now_berlin().strftime("%Y-%m-%d %H:%M:%S")
                 
                 # Reorder to match backup columns
                 logs_df = logs_df[COLUMNS[SHEET_BACKUP_HISTORY]]
