@@ -1104,7 +1104,6 @@ def render_story_view(username, story_idx, user_stories_df, ordered_active_users
             if not match_idx.empty:
                 new_likes_str = ",".join(liked_by)
                 stories_df.at[match_idx[0], 'likes'] = new_likes_str
-                stories_df = stories_df.drop(columns=['img_str'])
                 save_data(SHEET_STORIES, stories_df)
                 st.rerun()
 
