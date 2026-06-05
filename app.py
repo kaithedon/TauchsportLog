@@ -681,17 +681,17 @@ def buchung_view():
         # Get last 5 unique drinks
         recent = my_logs.drop_duplicates(subset=['Marke', 'Sorte'], keep='last').tail(5)
         if not recent.empty:
-            st.write("**⚡ Quick-Booking (Nochmal das Gleiche):**")
-            cols = st.columns(len(recent))
-            for idx, (_, row) in enumerate(recent.iterrows()):
-                with cols[idx]:
-                    # Format text cleanly in one line to prevent UI breaking
-                    btn_text = f"{row['Marke']} {row['Sorte'][:12]}" 
-                    if len(btn_text) > 20: btn_text = btn_text[:17] + "..."
-                    
-                    if st.button(f"⚡ {btn_text}", key=f"qb_{row['Log_ID']}", use_container_width=True, help=f"{row['Marke']} {row['Sorte']}"):
-                        book_drink_now(row['Marke'], row['Sorte'], float(row['Menge_ml']), float(row['Alk_Vol']), 1, None, final_lat, final_lon)
-            st.divider()
+            with st.expander("⚡ Quick-Booking (Letzte Getränke)", expanded=False):
+                cols = st.columns(len(recent))
+                for idx, (_, row) in enumerate(recent.iterrows()):
+                    with cols[idx]:
+                        # Format text cleanly in one line to prevent UI breaking
+                        btn_text = f"{row['Marke']} {row['Sorte'][:12]}" 
+                        if len(btn_text) > 20: btn_text = btn_text[:17] + "..."
+                        
+                        if st.button(f"⚡ {btn_text}", key=f"qb_{row['Log_ID']}", use_container_width=True, help=f"{row['Marke']} {row['Sorte']}"):
+                            book_drink_now(row['Marke'], row['Sorte'], float(row['Menge_ml']), float(row['Alk_Vol']), 1, None, final_lat, final_lon)
+            st.write("")
     
     getraenke_df = load_data(SHEET_GETRAENKE_DB)
     if 'Barcode' not in getraenke_df.columns:
@@ -702,24 +702,41 @@ def buchung_view():
     if "buchung_tab_val" not in st.session_state:
         st.session_state.buchung_tab_val = "🍻 Aus Datenbank wählen"
 
-    def change_tab():
-        st.session_state.buchung_tab_val = st.session_state.radio_buchung_tab
-
-    tab_options = ["🍻 Aus Datenbank wählen", "📷 Barcode einscannen", "➕ Eigenes Getränk anlegen"]
+    tab_options = ["Datenbank", "Barcode", "Neu anlegen"]
+    icons = ["database", "upc-scan", "plus-circle"]
+    
+    logic_map = {
+        "Datenbank": "🍻 Aus Datenbank wählen",
+        "Barcode": "📷 Barcode einscannen",
+        "Neu anlegen": "➕ Eigenes Getränk anlegen"
+    }
+    reverse_map = {v: k for k, v in logic_map.items()}
+    
     try:
-        idx = tab_options.index(st.session_state.buchung_tab_val)
+        current_selection = reverse_map.get(st.session_state.buchung_tab_val, "Datenbank")
+        idx = tab_options.index(current_selection)
     except:
         idx = 0
 
-    tab_selection = st.radio(
-        "Aktion wählen:",
-        tab_options,
-        index=idx,
-        horizontal=True,
-        label_visibility="collapsed",
-        key="radio_buchung_tab",
-        on_change=change_tab
+    selected_tab = option_menu(
+        menu_title=None,
+        options=tab_options,
+        icons=icons,
+        default_index=idx,
+        orientation="horizontal",
+        styles={
+            "container": {"padding": "0!important", "margin-bottom": "1.5rem", "background-color": "transparent"},
+            "icon": {"font-size": "14px"},
+            "nav-link": {"font-size": "13px", "text-align": "center", "margin": "0px", "--hover-color": "#4b4b4b"},
+            "nav-link-selected": {"background-color": "#ff4b4b"},
+        },
+        key="option_buchung_tab"
     )
+    
+    new_logic_val = logic_map[selected_tab]
+    if st.session_state.buchung_tab_val != new_logic_val:
+        st.session_state.buchung_tab_val = new_logic_val
+        st.rerun()
     
     # Der aktuelle Tab ist st.session_state.buchung_tab_val
     if st.session_state.buchung_tab_val == "🍻 Aus Datenbank wählen":
