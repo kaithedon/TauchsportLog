@@ -574,59 +574,30 @@ def buchung_view():
         else:
             st.info("🔴 Standort-Erfassung ist AUS")
     
-    # Unsichtbare Felder für GPS-Koordinaten
-    st.markdown("""<style>
-div[data-testid="stTextInput"]:has(input[placeholder="GPS_LAT_PLACEHOLDER"]),
-div[data-testid="stTextInput"]:has(input[placeholder="GPS_LON_PLACEHOLDER"]) {
-    display: none !important;
-}
-</style>""", unsafe_allow_html=True)
-    
-    lat_val = st.text_input("hidden_lat", placeholder="GPS_LAT_PLACEHOLDER", key="gps_lat", label_visibility="hidden")
-    lon_val = st.text_input("hidden_lon", placeholder="GPS_LON_PLACEHOLDER", key="gps_lon", label_visibility="hidden")
+    final_lat = None
+    final_lon = None
     
     if st.session_state.gps_active:
-        import streamlit.components.v1 as components
-        # Script wird im Parent-Kontext injiziert, damit Geolocation-Berechtigung korrekt greift
-        components.html("""
-        <script>
-        (function() {
-            var parentDoc = window.parent.document;
-            // Prüfen ob Script schon injiziert wurde
-            if (parentDoc.getElementById('gps_injected_script')) return;
-            
-            var s = parentDoc.createElement('script');
-            s.id = 'gps_injected_script';
-            s.textContent = `
+        from streamlit_js_eval import streamlit_js_eval
+        location = streamlit_js_eval(
+            js_expressions="""await new Promise((resolve) => {
                 if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(function(pos) {
-                        var latInput = document.querySelector('input[placeholder="GPS_LAT_PLACEHOLDER"]');
-                        var lonInput = document.querySelector('input[placeholder="GPS_LON_PLACEHOLDER"]');
-                        if (latInput && lonInput) {
-                            var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-                            setter.call(latInput, pos.coords.latitude);
-                            latInput.dispatchEvent(new Event('input', {bubbles:true}));
-                            latInput.dispatchEvent(new Event('change', {bubbles:true}));
-                            latInput.dispatchEvent(new KeyboardEvent('keydown', {bubbles:true, key:'Enter', code:'Enter', keyCode:13}));
-                            latInput.dispatchEvent(new Event('blur', {bubbles:true}));
-                            setter.call(lonInput, pos.coords.longitude);
-                            lonInput.dispatchEvent(new Event('input', {bubbles:true}));
-                            lonInput.dispatchEvent(new Event('change', {bubbles:true}));
-                            lonInput.dispatchEvent(new KeyboardEvent('keydown', {bubbles:true, key:'Enter', code:'Enter', keyCode:13}));
-                            lonInput.dispatchEvent(new Event('blur', {bubbles:true}));
-                        }
-                    }, function(err) {
-                        console.error('GPS-Fehler:', err.message);
-                    }, {enableHighAccuracy: true, timeout: 10000});
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => resolve(JSON.stringify({lat: pos.coords.latitude, lon: pos.coords.longitude})),
+                        (err) => resolve(null),
+                        {enableHighAccuracy: true, timeout: 10000}
+                    );
+                } else {
+                    resolve(null);
                 }
-            `;
-            parentDoc.body.appendChild(s);
-        })();
-        </script>
-        """, height=0)
-        
-    final_lat = float(lat_val) if (st.session_state.gps_active and lat_val) else None
-    final_lon = float(lon_val) if (st.session_state.gps_active and lon_val) else None
+            })""",
+            key="gps_location"
+        )
+        if location:
+            import json
+            coords = json.loads(location)
+            final_lat = coords.get("lat")
+            final_lon = coords.get("lon")
     
     # QUICK ACCESS
     logs_df = load_data(SHEET_KONSUM_LOG)
