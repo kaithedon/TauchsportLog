@@ -1500,8 +1500,6 @@ def social_view():
         return
         
     render_stories_bar()
-        
-    st.title("Live")
     
     users_df = load_data(SHEET_USER_DB)
     logs_df = load_data(SHEET_KONSUM_LOG)
@@ -1581,7 +1579,7 @@ def social_view():
                 st.session_state.view_profile_of = uname
                 st.rerun()
 
-    st.subheader("Knülle (> 0.0 ‰)")
+    st.subheader("Knülle")
     active_users = sorted(active_users, key=lambda x: x['p_val'], reverse=True)
     render_user_cards(active_users, is_knuelle=True)
     
@@ -1618,7 +1616,7 @@ def social_view():
                     
     st.divider()
     
-    st.subheader("Nüchtern (0.0 ‰)")
+    st.subheader("Nüchtern")
     render_user_cards(sober_users, is_knuelle=False)
 
 
@@ -2122,11 +2120,19 @@ else:
         menu.append("Admin-Bereich")
         icons.append("gear")
         
+    if 'last_menu_choice' not in st.session_state:
+        st.session_state.last_menu_choice = "Live"
+        
+    try:
+        current_index = menu.index(st.session_state.last_menu_choice)
+    except ValueError:
+        current_index = 0
+
     choice = option_menu(
         menu_title=None,
         options=menu,
         icons=icons,
-        default_index=0,
+        default_index=current_index,
         orientation="horizontal",
         styles={
             "container": {"padding": "0!important", "margin-bottom": "1rem"},
@@ -2136,10 +2142,8 @@ else:
         }
     )
     
-    # Reset deep-links when switching tabs, but NOT on initial load!
-    if 'last_menu_choice' not in st.session_state:
-        st.session_state.last_menu_choice = choice
-    elif st.session_state.last_menu_choice != choice:
+    # Reset deep-links when switching tabs
+    if st.session_state.last_menu_choice != choice:
         st.session_state.last_menu_choice = choice
         if "view_story" in st.query_params: del st.query_params["view_story"]
         if "story_idx" in st.query_params: del st.query_params["story_idx"]
