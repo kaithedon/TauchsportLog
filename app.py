@@ -1295,7 +1295,9 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                 new_likes_str = ",".join(liked_by)
                 stories_df.at[match_idx[0], 'likes'] = new_likes_str
                 save_data(SHEET_STORIES, stories_df)
-                st.rerun()
+                
+                # Update session state instead of rerunning the whole app to keep dialog open
+                st.session_state[temp_likes_key] = new_likes_str
 
     if is_own_story:
         with col_del:
