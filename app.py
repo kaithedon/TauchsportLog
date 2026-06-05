@@ -1050,7 +1050,7 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
     
     with col1:
         if has_prev:
-            if st.button("◀ Zurück", use_container_width=True):
+            if st.button("◀ Zurück", use_container_width=True, key=f"prev_btn_{username}_{story_idx}"):
                 if story_idx > 0:
                     st.query_params["view_story"] = username
                     st.query_params["story_idx"] = str(story_idx - 1)
@@ -1061,15 +1061,17 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                 st.rerun()
             
     with col2:
+        st.write("") # Padding
         if username == st.session_state.username:
             col_del1, col_del2, col_del3 = st.columns([1, 2, 1])
             with col_del2:
-                if st.button("🗑️", help="Story löschen"):
+                if st.button("🗑️", help="Story löschen", key=f"del_btn_{username}_{story_idx}"):
                     with st.spinner("Lösche..."):
                         stories_df = load_data(SHEET_STORIES)
                         
-                        # Match by username and exact image_data to avoid timestamp parsing issues
-                        drop_mask = (stories_df['username'] == username) & (stories_df['image_data'] == story['image_data'])
+                        # Match by username and the first 100 characters of image_data
+                        img_prefix = story['image_data'][:100]
+                        drop_mask = (stories_df['username'] == username) & (stories_df['image_data'].str.startswith(img_prefix))
                         drop_idx = stories_df[drop_mask].index
                         
                         if not drop_idx.empty:
@@ -1090,7 +1092,7 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                     
     with col3:
         if has_next:
-            if st.button("Weiter ▶", use_container_width=True):
+            if st.button("Weiter ▶", use_container_width=True, key=f"next_btn_{username}_{story_idx}"):
                 if story_idx < len(user_stories_df) - 1:
                     st.query_params["view_story"] = username
                     st.query_params["story_idx"] = str(story_idx + 1)
@@ -1111,7 +1113,7 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
     like_icon = "❤️" if i_liked else "🤍"
     like_text = f"{like_icon} Fachgerecht ({len(liked_by)})"
     
-    if st.button(like_text, type="primary" if i_liked else "secondary", use_container_width=True):
+    if st.button(like_text, type="primary" if i_liked else "secondary", use_container_width=True, key=f"like_btn_{username}_{story_idx}_{len(liked_by)}"):
         if i_liked:
             liked_by.remove(st.session_state.username)
         else:
@@ -1121,8 +1123,9 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
         if 'likes' not in stories_df.columns:
             stories_df['likes'] = ""
             
-        # Match by username and exact image_data to avoid timestamp parsing precision issues
-        match_idx = stories_df[(stories_df['username'] == username) & (stories_df['image_data'] == story['image_data'])].index
+        # Match by username and the first 100 characters of image_data
+        img_prefix = story['image_data'][:100]
+        match_idx = stories_df[(stories_df['username'] == username) & (stories_df['image_data'].str.startswith(img_prefix))].index
         
         if not match_idx.empty:
             new_likes_str = ",".join(liked_by)
