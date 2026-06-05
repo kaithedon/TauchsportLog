@@ -567,17 +567,14 @@ def buchung_view():
     with st.container(border=True):
         st.markdown("<h4 style='margin-bottom: 0;'>📍 GPS-Standort für dieses Getränk</h4>", unsafe_allow_html=True)
         
-        # Dynamisches Label für absolute Klarheit
-        if st.session_state.gps_active:
-            label = "🟢 Standort-Erfassung ist AKTIV"
-        else:
-            label = "🔴 Standort-Erfassung ist AUS"
-            
-        st.session_state.gps_active = st.checkbox(
-            label, 
-            value=st.session_state.gps_active
-        )
+        # Statische Checkbox verhindert Streamlit UI-Bugs
+        st.checkbox("Standort beim Buchen automatisch erfassen", key="gps_active")
         st.caption("Wird für deinen nächsten Besuch gemerkt.")
+        
+        if st.session_state.gps_active:
+            st.success("🟢 Standort-Erfassung ist AKTIV")
+        else:
+            st.error("🔴 Standort-Erfassung ist AUS")
     
     # CSS für unsichtbare Felder (ohne Toggle-Hack)
     css_hacks = """<style>
