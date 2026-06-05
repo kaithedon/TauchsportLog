@@ -576,35 +576,48 @@ def buchung_view():
     lon_val = st.text_input("hidden_lon", key="gps_lon", label_visibility="hidden")
     
     if gps_active:
-        import streamlit.components.v1 as components
-        components.html("""
+        st.markdown("""
+        <iframe allow="geolocation" srcdoc="
         <script>
-            const inputs = window.parent.document.querySelectorAll('input');
-            let latInput = null;
-            let lonInput = null;
-            inputs.forEach(el => {
-                if (el.getAttribute('aria-label') === "hidden_lat") latInput = el;
-                if (el.getAttribute('aria-label') === "hidden_lon") lonInput = el;
-            });
-
-            if (navigator.geolocation && latInput && lonInput) {
+            console.log('Starte GPS-Abfrage...');
+            if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(pos) {
-                    let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-                    
-                    if (latInput.value !== String(pos.coords.latitude)) {
+                    console.log('GPS erfolgreich!', pos.coords);
+                    const inputs = window.parent.document.querySelectorAll('input');
+                    let latInput = null;
+                    let lonInput = null;
+                    inputs.forEach(el => {
+                        if (el.getAttribute('aria-label') === 'hidden_lat') latInput = el;
+                        if (el.getAttribute('aria-label') === 'hidden_lon') lonInput = el;
+                    });
+
+                    if (latInput && lonInput) {
+                        let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                        
                         nativeInputValueSetter.call(latInput, pos.coords.latitude);
                         latInput.dispatchEvent(new Event('input', { bubbles: true }));
                         latInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                    if (lonInput.value !== String(pos.coords.longitude)) {
+                        
                         nativeInputValueSetter.call(lonInput, pos.coords.longitude);
                         lonInput.dispatchEvent(new Event('input', { bubbles: true }));
                         lonInput.dispatchEvent(new Event('change', { bubbles: true }));
+                        console.log('GPS-Werte erfolgreich an Streamlit übergeben.');
+                    } else {
+                        console.error('Versteckte Input-Felder nicht gefunden.');
                     }
+                }, function(err) {
+                    console.error('GPS-Fehler:', err.message);
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
                 });
+            } else {
+                console.error('Geolocation wird vom Browser nicht unterstützt.');
             }
         </script>
-        """, height=0)
+        " style="display:none; width:0; height:0;"></iframe>
+        """, unsafe_allow_html=True)
         
     final_lat = float(lat_val) if (gps_active and lat_val) else None
     final_lon = float(lon_val) if (gps_active and lon_val) else None
