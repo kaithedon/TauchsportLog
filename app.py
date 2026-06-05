@@ -384,30 +384,26 @@ def calc_promille(username):
     
     user_logs = user_logs.sort_values('Zeitstempel')
     
-    current_promille = 0.0
-    last_time = None
-    
+    # 1. Summiere den reinen Alkohol auf das theoretische Maximum
+    max_promille = 0.0
     for _, row in user_logs.iterrows():
-        drink_time = row['Zeitstempel']
         ml = float(row['Menge_ml'])
         vol = float(row['Alk_Vol'])
-        
-        # Abbau seit letztem Getränk
-        if last_time is not None:
-            hours_passed = (drink_time - last_time).total_seconds() / 3600.0
-            current_promille = max(0.0, current_promille - (hours_passed * 0.15))
-            
-        # Promille des aktuellen Getränks hinzufügen
         a = ml * (vol / 100) * 0.8
-        added_promille = a / (gewicht * r)
-        current_promille += added_promille
-        last_time = drink_time
+        max_promille += a / (gewicht * r)
         
-    # Abbau seit letztem Getränk bis jetzt
-    if last_time is not None:
-        hours_passed = (now - last_time).total_seconds() / 3600.0
-        current_promille = max(0.0, current_promille - (hours_passed * 0.15))
+    # 2. Ermittle den Zeitpunkt des ersten Drinks
+    first_drink_time = user_logs['Zeitstempel'].min()
+    
+    # 3. Berechne die komplett vergangenen Stunden seit dem ersten Drink
+    hours_elapsed = (now - first_drink_time).total_seconds() / 3600.0
+    if hours_elapsed < 0:
+        hours_elapsed = 0.0
         
+    # 4. Ziehe den kontinuierlichen Abbau (0.15/h) vom Gesamt-Promille ab
+    elimination = hours_elapsed * 0.15
+    current_promille = max(0.0, max_promille - elimination)
+    
     return round(current_promille, 2)
 
 def get_symptom_info(promille):
