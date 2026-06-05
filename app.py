@@ -1042,7 +1042,12 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
     st.markdown(f'<img src="{image_data}" style="width:100%; border-radius:10px;">', unsafe_allow_html=True)
     
     # --- LIKES LOGIC ---
-    likes_str = str(story.get('likes', ''))
+    temp_likes_key = f"temp_likes_{username}_{story_idx}"
+    if temp_likes_key in st.session_state:
+        likes_str = st.session_state[temp_likes_key]
+    else:
+        likes_str = str(story.get('likes', ''))
+        
     if likes_str.lower() == 'nan': likes_str = ''
     liked_by = [u.strip() for u in likes_str.split(',') if u.strip()]
     
@@ -1102,9 +1107,8 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                 # Save but DO NOT clear cache! This prevents a global rerun, saving the dialog state!
                 save_data(SHEET_STORIES, stories_df, clear_cache=False)
                 
-                # Update the UI dataframe immediately so the fragment rerender shows the like!
-                user_stories_df.at[user_stories_df.index[story_idx], 'likes'] = new_likes_str
-                # NO st.rerun() needed! Streamlit naturally reruns the dialog.
+                # Store updated likes in session state to update UI instantly without mutating dialog arguments!
+                st.session_state[temp_likes_key] = new_likes_str
 
     if is_own_story:
         with col_del:
