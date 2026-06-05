@@ -671,6 +671,39 @@ def social_view():
                     st.markdown(f"### {pic} {uname}")
                 st.write(f"**Promille:** {p_val} ‰")
                 st.write(f"**Fav. Drink:** {fav_drink}")
+                
+                if not user_logs.empty:
+                    user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
+                    last_drink_time = user_logs['Zeitstempel'].max()
+                    now = pd.Timestamp.now()
+                    diff = now - last_drink_time
+                    days = diff.days
+                    hours = diff.seconds // 3600
+                    minutes = (diff.seconds % 3600) // 60
+                    st.write(f"⏱️ **Letztes Getränk:** vor {days}T, {hours}h, {minutes}m")
+                    
+                    with st.expander("📊 Profil & Stats ansehen"):
+                        all_time = len(user_logs)
+                        this_year = len(user_logs[user_logs['Zeitstempel'].dt.year == now.year])
+                        this_month = len(user_logs[(user_logs['Zeitstempel'].dt.year == now.year) & (user_logs['Zeitstempel'].dt.month == now.month)])
+                        
+                        start_of_week = now - pd.to_timedelta(now.dayofweek, unit='d')
+                        start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+                        this_week = len(user_logs[user_logs['Zeitstempel'] >= start_of_week])
+                        
+                        first_drink_date = user_logs['Zeitstempel'].min()
+                        days_active = (now - first_drink_date).days + 1
+                        avg_per_day = round(all_time / max(1, days_active), 2)
+                        avg_per_active_day = round(user_logs.groupby(user_logs['Zeitstempel'].dt.date).size().mean(), 2)
+                        
+                        st.markdown(f"**All-Time:** {all_time} 🍻")
+                        st.markdown(f"**Dieses Jahr:** {this_year} 🍻")
+                        st.markdown(f"**Dieser Monat:** {this_month} 🍻")
+                        st.markdown(f"**Diese Woche:** {this_week} 🍻")
+                        st.markdown(f"**Ø pro Tag (Gesamt):** {avg_per_day} 🍻")
+                        st.markdown(f"**Ø pro Party-Tag:** {avg_per_active_day} 🍻")
+                else:
+                    st.write("⏱️ **Letztes Getränk:** -")
 
     st.divider()
     
@@ -685,44 +718,7 @@ def social_view():
     else:
         st.write("Noch keine Daten für die Rangliste vorhanden.")
         
-    st.divider()
-    
-    st.subheader("🔍 Taucher Profil-Analyse")
-    selected_user = st.selectbox("Wähle ein Mitglied für detaillierte Statistiken:", users_df['Username'].tolist())
-    
-    if selected_user:
-        user_logs = logs_df[logs_df['Username'] == selected_user].copy()
-        if not user_logs.empty:
-            user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
-            now = pd.Timestamp.now()
-            
-            all_time = len(user_logs)
-            this_year = len(user_logs[user_logs['Zeitstempel'].dt.year == now.year])
-            this_month = len(user_logs[(user_logs['Zeitstempel'].dt.year == now.year) & (user_logs['Zeitstempel'].dt.month == now.month)])
-            
-            start_of_week = now - pd.to_timedelta(now.dayofweek, unit='d')
-            start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
-            this_week = len(user_logs[user_logs['Zeitstempel'] >= start_of_week])
-            
-            first_drink_date = user_logs['Zeitstempel'].min()
-            days_active = (now - first_drink_date).days + 1
-            avg_per_day = round(all_time / max(1, days_active), 2)
-            
-            avg_per_active_day = round(user_logs.groupby(user_logs['Zeitstempel'].dt.date).size().mean(), 2)
-            
-            with st.container(border=True):
-                st.markdown(f"#### 📊 Statistiken für {selected_user}")
-                c1, c2, c3 = st.columns(3)
-                c1.metric("All-Time", f"{all_time} 🍻")
-                c2.metric("Dieses Jahr", f"{this_year} 🍻")
-                c3.metric("Dieser Monat", f"{this_month} 🍻")
-                
-                c4, c5, c6 = st.columns(3)
-                c4.metric("Diese Woche", f"{this_week} 🍻")
-                c5.metric("Ø pro Tag (Gesamt)", f"{avg_per_day} 🍻")
-                c6.metric("Ø pro Party-Tag", f"{avg_per_active_day} 🍻")
-        else:
-            st.info(f"{selected_user} hat noch keine Getränke verbucht.")
+
 
 def admin_view():
     st.title("🛠️ Admin-Bereich")
