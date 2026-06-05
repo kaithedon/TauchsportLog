@@ -1427,10 +1427,12 @@ def render_stories_bar():
         view_story_dialog(story_user, story_idx, user_stories, ordered_active_users)
 
     import urllib.parse
+    import time
     q_params = dict(st.query_params)
     
     q_params_upload = q_params.copy()
     q_params_upload["upload_story"] = "true"
+    q_params_upload["t"] = str(int(time.time() * 1000))
     upload_link = "?" + urllib.parse.urlencode(q_params_upload)
 
     # Calculate who is currently active (drank in the last 30 minutes)
@@ -1461,6 +1463,7 @@ def render_stories_bar():
     
     q_params_my_view = q_params.copy()
     q_params_my_view["view_story"] = my_uname
+    q_params_my_view["t"] = str(int(time.time() * 1000))
     my_view_link = "?" + urllib.parse.urlencode(q_params_my_view)
     
     my_main_link = my_view_link if has_my_story else upload_link
@@ -1495,6 +1498,7 @@ def render_stories_bar():
         
         q_params_view = q_params.copy()
         q_params_view["view_story"] = uname
+        q_params_view["t"] = str(int(time.time() * 1000))
         link = "?" + urllib.parse.urlencode(q_params_view)
         
         status_dot = "🟢" if uname in drunk_users else "🔴"
