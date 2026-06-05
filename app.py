@@ -1034,7 +1034,8 @@ def admin_view():
                 "Glaabsbräu", "Schmucker", "Pfungstädter", "Michelstädter Brauhaus", "Brauhaus Faust", 
                 "Krone (Darmstadt)", "Eichbaum Ureich", "Brauhaus Knallhütte", "Hochstift Pils",
                 "Schöfferhofer Weizen", "Zunft Kölsch", "Sester Kölsch", "Küppers Kölsch",
-                "Uerige Sticke", "Brauerei zum Schlüssel", "Diebels Alt", "Frankenheim Alt"
+                "Uerige Sticke", "Brauerei zum Schlüssel", "Diebels Alt", "Frankenheim Alt",
+                "Binding"
             ])
             
             sorten_de = [
