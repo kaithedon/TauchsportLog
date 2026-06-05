@@ -916,6 +916,41 @@ def admin_view():
                 "Asahi Super Dry", "Sapporo", "Tsingtao", "Tiger Beer", "Singha", "Chang", "Quilmes"
             ]
 
+            neue_brauereien_int.extend([
+                "Bernard", "Kozel", "Zubr", "Tyskie", "Żywiec", "Lech", "Warka", "Okocim", 
+                "Jupiler", "Brugse Zot", "Duchesse de Bourgogne", "Westmalle", "Rochefort", "Orval",
+                "La Trappe", "Hertog Jan Weizener", "Gulpener", "Bavaria 8.6",
+                "Eggenberg", "Murauer", "Schremser", "Hirter", "Schützengarten", "Chopfab",
+                "Carling", "Tennent's", "Hobgoblin", "Beavertown", "Fuller's", "Smithwick's",
+                "Estrella Galicia", "Moritz", "Ambar", "Sagres Bohemia", "Baladin", "Birra Moretti La Rossa",
+                "Lapin Kulta", "Norrlands Guld", "Pelforth", "Fischer", "3 Fonteinen", "Põhjala"
+            ])
+
+            brauereien_de_extra = [
+                "Schlenkerla (Bamberg)", "Andechs", "Weltenburger Kloster", "Riegele", "FrauGruber",
+                "Felsgold", "Wernesgrüner", "Brinkhoff's", "Dortmunder Kronen", "Stauder", 
+                "König Ludwig", "Allgäuer Brauhaus", "Alpirsbacher", "Distelhäuser", "Hochstift", 
+                "Gessner", "Köthener", "Freiberger", "Lausitzer Porter", "Würzburger Hofbräu",
+                "Tucher", "Grüner", "Schanzenbräu", "Karg", "Unertl", "Kneitinger", "Spital",
+                "Weltenburger", "Arcobräu", "Graf Arco", "Falter", "Eichbaum", "Welser",
+                "Gaffel Wiess", "Peters Kölsch", "Sion Kölsch", "Mühlen Kölsch", "Dom Kölsch",
+                "Bolten Alt", "Schlüssel Alt", "Schumacher Alt", "Kürzer Alt", "Hannen Alt"
+            ]
+            
+            sorten_de = [
+                {"Sorte": "Pils (0.33l)", "Vol": 4.8, "Menge": 330},
+                {"Sorte": "Pils (0.5l)", "Vol": 4.8, "Menge": 500},
+                {"Sorte": "Helles (0.5l)", "Vol": 5.0, "Menge": 500},
+                {"Sorte": "Export (0.5l)", "Vol": 5.2, "Menge": 500},
+                {"Sorte": "Hefe-Weizen (0.5l)", "Vol": 5.5, "Menge": 500},
+                {"Sorte": "Kristall-Weizen (0.5l)", "Vol": 5.5, "Menge": 500},
+                {"Sorte": "Dunkelbier (0.5l)", "Vol": 5.1, "Menge": 500},
+                {"Sorte": "Radler (0.33l)", "Vol": 2.5, "Menge": 330},
+                {"Sorte": "Radler (0.5l)", "Vol": 2.5, "Menge": 500},
+                {"Sorte": "Alkoholfrei (0.33l)", "Vol": 0.0, "Menge": 330},
+                {"Sorte": "Alkoholfrei (0.5l)", "Vol": 0.0, "Menge": 500}
+            ]
+
             neue_sorten_int = [
                 {"Sorte": "Lager / Pils", "Vol": 5.0, "Menge": 330, "Preis": 3.00},
                 {"Sorte": "Pale Ale / IPA", "Vol": 6.2, "Menge": 330, "Preis": 3.80},
@@ -954,9 +989,19 @@ def admin_view():
 
             new_drinks = []
             
-            # Biere kombinieren
+            # Internationale Biere kombinieren
             for b in neue_brauereien_int:
                 for s in neue_sorten_int:
+                    new_drinks.append({
+                        "Marke": b,
+                        "Sorte": s["Sorte"],
+                        "Alkoholgehalt_Vol": round(s["Vol"], 2),
+                        "Standard_Menge_ml": s["Menge"]
+                    })
+                    
+            # Deutsche Biere kombinieren
+            for b in brauereien_de_extra:
+                for s in sorten_de:
                     new_drinks.append({
                         "Marke": b,
                         "Sorte": s["Sorte"],
