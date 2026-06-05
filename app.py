@@ -509,7 +509,11 @@ def buchung_view():
             cols = st.columns(len(recent))
             for idx, (_, row) in enumerate(recent.iterrows()):
                 with cols[idx]:
-                    if st.button(f"{row['Marke']}\n{row['Sorte']}", key=f"qb_{row['Log_ID']}", use_container_width=True):
+                    # Format text cleanly in one line to prevent UI breaking
+                    btn_text = f"{row['Marke']} {row['Sorte'][:12]}" 
+                    if len(btn_text) > 20: btn_text = btn_text[:17] + "..."
+                    
+                    if st.button(f"⚡ {btn_text}", key=f"qb_{row['Log_ID']}", use_container_width=True, help=f"{row['Marke']} {row['Sorte']}"):
                         book_drink_now(row['Marke'], row['Sorte'], float(row['Menge_ml']), float(row['Alk_Vol']))
             st.divider()
     
