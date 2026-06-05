@@ -1273,8 +1273,7 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                 st.rerun()
             
     with col2:
-        # Use a STATIC key so Streamlit doesn't destroy the widget and force a full app rerun!
-        if st.button(like_text, type="primary" if i_liked else "secondary", use_container_width=True, key=f"like_btn_{username}_{story_idx}"):
+        def handle_like():
             if i_liked:
                 liked_by.remove(st.session_state.username)
             else:
@@ -1296,8 +1295,11 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                 stories_df.at[match_idx[0], 'likes'] = new_likes_str
                 save_data(SHEET_STORIES, stories_df)
                 
-                # Update session state instead of rerunning the whole app to keep dialog open
+                # Update session state so the fragment sees it on rerender
                 st.session_state[temp_likes_key] = new_likes_str
+                
+        # Use on_click to update state BEFORE the fragment rerenders
+        st.button(like_text, type="primary" if i_liked else "secondary", use_container_width=True, key=f"like_btn_{username}_{story_idx}", on_click=handle_like)
 
     if is_own_story:
         with col_del:
