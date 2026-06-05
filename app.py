@@ -449,6 +449,8 @@ def login_view():
                     if login_user(l_user, l_pass):
                         st.query_params["user"] = l_user
                         st.query_params["hash"] = hash_password(l_pass)
+                        import time
+                        time.sleep(0.5)
                         st.rerun()
                     else:
                         st.error("Falscher Username oder Passwort.")
