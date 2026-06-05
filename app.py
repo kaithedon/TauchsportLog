@@ -381,6 +381,7 @@ def calc_promille(username):
     logs_df = load_data(SHEET_KONSUM_LOG)
     logs_df['Zeitstempel'] = pd.to_datetime(logs_df['Zeitstempel'])
     
+    now = get_now_berlin()
     user_logs = logs_df[(logs_df['Username'].astype(str).str.strip().str.lower() == str(username).strip().lower())]
     if user_logs.empty: return 0.0
     
