@@ -589,29 +589,29 @@ div[data-testid="stTextInput"]:has(input[placeholder="GPS_LON_PLACEHOLDER"]) {
     lon_val = st.text_input("hidden_lon", placeholder="GPS_LON_PLACEHOLDER", key="gps_lon", label_visibility="hidden")
     
     if st.session_state.gps_active:
-        iframe_html = """<iframe allow="geolocation" style="display:none; width:0; height:0;" srcdoc="<script>
+        iframe_html = """<iframe allow="geolocation" style="display:none; width:0; height:0;" srcdoc='<script>
 if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(function(pos) {
-        let latInput = window.parent.document.querySelector('input[placeholder=\\"GPS_LAT_PLACEHOLDER\\"]');
-        let lonInput = window.parent.document.querySelector('input[placeholder=\\"GPS_LON_PLACEHOLDER\\"]');
+        let latInput = window.parent.document.querySelector("input[placeholder=GPS_LAT_PLACEHOLDER]");
+        let lonInput = window.parent.document.querySelector("input[placeholder=GPS_LON_PLACEHOLDER]");
         if (latInput && lonInput) {
-            let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+            let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
             
             nativeInputValueSetter.call(latInput, pos.coords.latitude);
-            latInput.dispatchEvent(new Event('input', { bubbles: true }));
-            latInput.dispatchEvent(new Event('change', { bubbles: true }));
-            latInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
-            latInput.dispatchEvent(new Event('blur', { bubbles: true }));
+            latInput.dispatchEvent(new Event("input", { bubbles: true }));
+            latInput.dispatchEvent(new Event("change", { bubbles: true }));
+            latInput.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter", code: "Enter", keyCode: 13 }));
+            latInput.dispatchEvent(new Event("blur", { bubbles: true }));
             
             nativeInputValueSetter.call(lonInput, pos.coords.longitude);
-            lonInput.dispatchEvent(new Event('input', { bubbles: true }));
-            lonInput.dispatchEvent(new Event('change', { bubbles: true }));
-            lonInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
-            lonInput.dispatchEvent(new Event('blur', { bubbles: true }));
+            lonInput.dispatchEvent(new Event("input", { bubbles: true }));
+            lonInput.dispatchEvent(new Event("change", { bubbles: true }));
+            lonInput.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter", code: "Enter", keyCode: 13 }));
+            lonInput.dispatchEvent(new Event("blur", { bubbles: true }));
         }
-    }, function(err) { console.error('GPS-Fehler:', err.message); }, { enableHighAccuracy: true });
+    }, function(err) { console.error("GPS-Fehler:", err.message); }, { enableHighAccuracy: true });
 }
-</script>"></iframe>"""
+</script>'></iframe>"""
         st.markdown(iframe_html, unsafe_allow_html=True)
         
     final_lat = float(lat_val) if (st.session_state.gps_active and lat_val) else None
