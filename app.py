@@ -864,14 +864,17 @@ def statistik_view():
         merged['Emoji'] = merged.apply(lambda row: user_emoji_map.get(row['Username'], "") if row['Is_Last'] == True else "", axis=1)
         merged['Image_Url'] = merged.apply(lambda row: user_image_map.get(row['Username'], None) if row['Is_Last'] == True else None, axis=1)
         
-        # Namen für die Legende mit All-Time Anzahl erweitern
+        # Namen für die Legende mit All-Time Anzahl erweitern und sortieren
         max_drinks = merged.groupby('Username')['All-Time Getränke'].max().to_dict()
         merged['Legend_Name'] = merged['Username'].apply(lambda u: f"({int(max_drinks[u])}) {u}")
+        
+        # Sortiere die Legende absteigend nach Anzahl
+        ordered_legends = [f"({int(v)}) {k}" for k, v in sorted(max_drinks.items(), key=lambda item: item[1], reverse=True)]
         
         base = alt.Chart(merged).encode(
             x=alt.X('Datum:T', axis=alt.Axis(format='%d.%m.', tickCount='day', title='Datum')),
             y=alt.Y('All-Time Getränke:Q', title='Getränke Gesamt'),
-            color=alt.Color('Legend_Name:N', legend=alt.Legend(title="Taucher", orient="right"))
+            color=alt.Color('Legend_Name:N', sort=ordered_legends, legend=alt.Legend(title="Taucher", orient="right"))
         )
         
         line = base.mark_line(point=alt.OverlayMarkDef(size=60))
