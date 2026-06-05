@@ -2132,8 +2132,10 @@ else:
         }
     )
     
-    # Reset deep-links when switching tabs
-    if st.session_state.get('last_menu_choice') != choice:
+    # Reset deep-links when switching tabs, but NOT on initial load!
+    if 'last_menu_choice' not in st.session_state:
+        st.session_state.last_menu_choice = choice
+    elif st.session_state.last_menu_choice != choice:
         st.session_state.last_menu_choice = choice
         if "view_story" in st.query_params: del st.query_params["view_story"]
         if "story_idx" in st.query_params: del st.query_params["story_idx"]
