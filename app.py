@@ -806,7 +806,7 @@ else:
         pass
         
     # Top Navigation Bar
-    col_nav, col_logout = st.columns([0.85, 0.15], vertical_alignment="center")
+    col_nav, col_logout = st.columns([0.85, 0.15])
     with col_nav:
         st.write(f"Willkommen, **{st.session_state.username}** 🤿")
     with col_logout:
