@@ -1042,18 +1042,21 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
     st.write("")
     col1, col2, col3 = st.columns([1, 2, 1])
     
+    curr_user_idx = ordered_active_users.index(username)
+    has_prev = (story_idx > 0) or (curr_user_idx > 0)
+    has_next = (story_idx < len(user_stories_df) - 1) or (curr_user_idx < len(ordered_active_users) - 1)
+    
     with col1:
-        if st.button("◀", use_container_width=True):
-            if story_idx > 0:
-                st.query_params["view_story"] = username
-                st.query_params["story_idx"] = str(story_idx - 1)
-            else:
-                curr_user_idx = ordered_active_users.index(username)
-                if curr_user_idx > 0:
+        if has_prev:
+            if st.button("◀", use_container_width=True):
+                if story_idx > 0:
+                    st.query_params["view_story"] = username
+                    st.query_params["story_idx"] = str(story_idx - 1)
+                else:
                     prev_user = ordered_active_users[curr_user_idx - 1]
                     st.query_params["view_story"] = prev_user
                     st.query_params["story_idx"] = "last"
-            st.rerun()
+                st.rerun()
             
     with col2:
         if username == st.session_state.username:
@@ -1084,17 +1087,16 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                         st.error("Story nicht gefunden!")
                     
     with col3:
-        if st.button("▶", use_container_width=True):
-            if story_idx < len(user_stories_df) - 1:
-                st.query_params["view_story"] = username
-                st.query_params["story_idx"] = str(story_idx + 1)
-            else:
-                curr_user_idx = ordered_active_users.index(username)
-                if curr_user_idx < len(ordered_active_users) - 1:
+        if has_next:
+            if st.button("▶", use_container_width=True):
+                if story_idx < len(user_stories_df) - 1:
+                    st.query_params["view_story"] = username
+                    st.query_params["story_idx"] = str(story_idx + 1)
+                else:
                     next_user = ordered_active_users[curr_user_idx + 1]
                     st.query_params["view_story"] = next_user
                     st.query_params["story_idx"] = "0"
-            st.rerun()
+                st.rerun()
 
 def render_stories_bar():
     # Load all users and stories
