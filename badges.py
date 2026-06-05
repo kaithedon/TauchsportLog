@@ -187,6 +187,9 @@ def render_profile_badges(user_badges_list):
             text-align: center;
             margin-bottom: 15px;
             padding: 5px;
+            position: relative;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
         .badge-locked {
             filter: grayscale(100%) opacity(30%);
@@ -204,6 +207,40 @@ def render_profile_badges(user_badges_list):
             color: #888;
             font-size: 0.65rem;
             line-height: 1.1;
+        }
+        .badge-tooltip {
+            visibility: hidden;
+            width: 140px;
+            background-color: #222;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 100;
+            bottom: 100%;
+            left: 50%;
+            margin-left: -70px;
+            font-size: 0.75rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            box-shadow: 0px 4px 6px rgba(0,0,0,0.5);
+            margin-bottom: 5px;
+        }
+        .badge-tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #222 transparent transparent transparent;
+        }
+        .badge-container:hover .badge-tooltip, .badge-container:active .badge-tooltip, .badge-container:focus .badge-tooltip {
+            visibility: visible;
+            opacity: 1;
         }
         .rank-header {
             font-size: 0.8rem;
@@ -232,15 +269,17 @@ def render_profile_badges(user_badges_list):
             with col:
                 if is_earned:
                     st.markdown(f'''
-                        <div class="badge-container" title="{badge['desc']}">
+                        <div class="badge-container" tabindex="0">
                             <div class="badge-icon">{badge['icon']}</div>
                             <div class="badge-name"><b>{badge['name']}</b></div>
+                            <div class="badge-tooltip">{badge['desc']}</div>
                         </div>
                     ''', unsafe_allow_html=True)
                 else:
                     st.markdown(f'''
-                        <div class="badge-container" title="{badge['desc']}">
+                        <div class="badge-container" tabindex="0">
                             <div class="badge-icon badge-locked">{badge['icon']}</div>
                             <div class="badge-name-locked">{badge['name']}</div>
+                            <div class="badge-tooltip">{badge['desc']}</div>
                         </div>
                     ''', unsafe_allow_html=True)
