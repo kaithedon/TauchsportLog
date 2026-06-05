@@ -571,28 +571,31 @@ def buchung_view():
             value=st.session_state.gps_active
         )
     
-    st.markdown("""<style>
-div[data-testid="stTextInput"]:has(input[aria-label="hidden_lat"]),
-div[data-testid="stTextInput"]:has(input[aria-label="hidden_lon"]) {
+    # CSS für unsichtbare Felder und den grünen Schalter
+    css_hacks = """<style>
+div[data-testid="stTextInput"]:has(input[placeholder="GPS_LAT_PLACEHOLDER"]),
+div[data-testid="stTextInput"]:has(input[placeholder="GPS_LON_PLACEHOLDER"]) {
     display: none !important;
 }
-</style>""", unsafe_allow_html=True)
+"""
+    if st.session_state.gps_active:
+        css_hacks += """
+div[data-testid="stToggle"] [data-baseweb="toggle"] > div {
+    background-color: #27ae60 !important;
+}
+"""
+    css_hacks += "</style>"
+    st.markdown(css_hacks, unsafe_allow_html=True)
     
-    lat_val = st.text_input("hidden_lat", key="gps_lat", label_visibility="hidden")
-    lon_val = st.text_input("hidden_lon", key="gps_lon", label_visibility="hidden")
+    lat_val = st.text_input("hidden_lat", placeholder="GPS_LAT_PLACEHOLDER", key="gps_lat", label_visibility="hidden")
+    lon_val = st.text_input("hidden_lon", placeholder="GPS_LON_PLACEHOLDER", key="gps_lon", label_visibility="hidden")
     
     if st.session_state.gps_active:
-        # Kein Einrücken hier, da Streamlit sonst Markdown-Codeblöcke rendert!
         iframe_html = """<iframe allow="geolocation" style="display:none; width:0; height:0;" srcdoc="<script>
 if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(function(pos) {
-        const inputs = window.parent.document.querySelectorAll('input');
-        let latInput = null;
-        let lonInput = null;
-        inputs.forEach(el => {
-            if (el.getAttribute('aria-label') === 'hidden_lat') latInput = el;
-            if (el.getAttribute('aria-label') === 'hidden_lon') lonInput = el;
-        });
+        let latInput = window.parent.document.querySelector('input[placeholder=\\"GPS_LAT_PLACEHOLDER\\"]');
+        let lonInput = window.parent.document.querySelector('input[placeholder=\\"GPS_LON_PLACEHOLDER\\"]');
         if (latInput && lonInput) {
             let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
             nativeInputValueSetter.call(latInput, pos.coords.latitude);
