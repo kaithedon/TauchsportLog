@@ -596,12 +596,18 @@ if (navigator.geolocation) {
         let lonInput = window.parent.document.querySelector('input[placeholder=\\"GPS_LON_PLACEHOLDER\\"]');
         if (latInput && lonInput) {
             let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+            
             nativeInputValueSetter.call(latInput, pos.coords.latitude);
             latInput.dispatchEvent(new Event('input', { bubbles: true }));
             latInput.dispatchEvent(new Event('change', { bubbles: true }));
+            latInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
+            latInput.dispatchEvent(new Event('blur', { bubbles: true }));
+            
             nativeInputValueSetter.call(lonInput, pos.coords.longitude);
             lonInput.dispatchEvent(new Event('input', { bubbles: true }));
             lonInput.dispatchEvent(new Event('change', { bubbles: true }));
+            lonInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', code: 'Enter', keyCode: 13 }));
+            lonInput.dispatchEvent(new Event('blur', { bubbles: true }));
         }
     }, function(err) { console.error('GPS-Fehler:', err.message); }, { enableHighAccuracy: true });
 }
