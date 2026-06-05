@@ -75,9 +75,9 @@ SHEET_ACTIVATION_CODES = "Activation_Codes"
 COLUMNS = {
     SHEET_USER_DB: ["Username", "Password_Hash", "Gewicht_kg", "Groesse_cm", "Geschlecht", "Rolle", "Profilbild_Url"],
     SHEET_GETRAENKE_DB: ["Marke", "Sorte", "Alkoholgehalt_Vol", "Standard_Menge_ml"],
-    SHEET_KONSUM_LOG: ["Log_ID", "Zeitstempel", "Username", "Marke", "Sorte", "Menge_ml", "Alk_Vol"],
+    SHEET_KONSUM_LOG: ["Log_ID", "Zeitstempel", "Username", "Marke", "Sorte", "Menge_ml", "Alk_Vol", "latitude", "longitude"],
     SHEET_GLOBALE_STATS: ["Key", "Value"],
-    SHEET_BACKUP_HISTORY: ["Backup_Zeitstempel", "Log_ID", "Zeitstempel", "Username", "Marke", "Sorte", "Menge_ml", "Alk_Vol"],
+    SHEET_BACKUP_HISTORY: ["Backup_Zeitstempel", "Log_ID", "Zeitstempel", "Username", "Marke", "Sorte", "Menge_ml", "Alk_Vol", "latitude", "longitude"],
     SHEET_ACTIVATION_CODES: ["Code", "Used", "Used_By", "Used_At"]
 }
 
@@ -507,7 +507,7 @@ def generate_whatsapp_link(username, anzahl, marke, sorte, nr_heute, nr_jahr):
     encoded = urllib.parse.quote(msg)
     return f"https://wa.me/?text={encoded}"
 
-def book_drink_now(marke, sorte, menge, alk_vol, anzahl=1, buchungs_zeit=None):
+def book_drink_now(marke, sorte, menge, alk_vol, anzahl=1, buchungs_zeit=None, lat=None, lon=None):
     if buchungs_zeit is None:
         buchungs_zeit = get_now_berlin()
     logs_df = load_data(SHEET_KONSUM_LOG)
@@ -520,7 +520,9 @@ def book_drink_now(marke, sorte, menge, alk_vol, anzahl=1, buchungs_zeit=None):
             "Marke": marke,
             "Sorte": sorte,
             "Menge_ml": menge,
-            "Alk_Vol": alk_vol
+            "Alk_Vol": alk_vol,
+            "latitude": lat,
+            "longitude": lon
         })
     logs_df = pd.concat([logs_df, pd.DataFrame(new_logs)], ignore_index=True)
     save_data(SHEET_KONSUM_LOG, logs_df)
@@ -558,6 +560,55 @@ def booking_success_popup(wa_link, label):
 def buchung_view():
     st.title("🍺 Getränke buchen")
     
+    # --- GPS STANDORT ERFASSUNG ---
+    gps_active = st.checkbox("📍 Standort automatisch erfassen", value=False, key="gps_active")
+    
+    st.markdown("""
+    <style>
+    div[data-testid="stTextInput"]:has(input[aria-label="hidden_lat"]),
+    div[data-testid="stTextInput"]:has(input[aria-label="hidden_lon"]) {
+        display: none !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    lat_val = st.text_input("hidden_lat", key="gps_lat", label_visibility="hidden")
+    lon_val = st.text_input("hidden_lon", key="gps_lon", label_visibility="hidden")
+    
+    if gps_active:
+        import streamlit.components.v1 as components
+        components.html("""
+        <script>
+            const inputs = window.parent.document.querySelectorAll('input');
+            let latInput = null;
+            let lonInput = null;
+            inputs.forEach(el => {
+                if (el.getAttribute('aria-label') === "hidden_lat") latInput = el;
+                if (el.getAttribute('aria-label') === "hidden_lon") lonInput = el;
+            });
+
+            if (navigator.geolocation && latInput && lonInput) {
+                navigator.geolocation.getCurrentPosition(function(pos) {
+                    let nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                    
+                    if (latInput.value !== String(pos.coords.latitude)) {
+                        nativeInputValueSetter.call(latInput, pos.coords.latitude);
+                        latInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        latInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    if (lonInput.value !== String(pos.coords.longitude)) {
+                        nativeInputValueSetter.call(lonInput, pos.coords.longitude);
+                        lonInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        lonInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+            }
+        </script>
+        """, height=0)
+        
+    final_lat = float(lat_val) if (gps_active and lat_val) else None
+    final_lon = float(lon_val) if (gps_active and lon_val) else None
+    
     # QUICK ACCESS
     logs_df = load_data(SHEET_KONSUM_LOG)
     my_logs = logs_df[logs_df['Username'] == st.session_state.username]
@@ -574,7 +625,7 @@ def buchung_view():
                     if len(btn_text) > 20: btn_text = btn_text[:17] + "..."
                     
                     if st.button(f"⚡ {btn_text}", key=f"qb_{row['Log_ID']}", use_container_width=True, help=f"{row['Marke']} {row['Sorte']}"):
-                        book_drink_now(row['Marke'], row['Sorte'], float(row['Menge_ml']), float(row['Alk_Vol']))
+                        book_drink_now(row['Marke'], row['Sorte'], float(row['Menge_ml']), float(row['Alk_Vol']), 1, None, final_lat, final_lon)
             st.divider()
     
     getraenke_df = load_data(SHEET_GETRAENKE_DB)
@@ -623,8 +674,7 @@ def buchung_view():
                     sorte = row['Sorte']
                     menge = row['Standard_Menge_ml']
                     alk_vol = row['Alkoholgehalt_Vol']
-                    
-                    book_drink_now(marke, sorte, menge, alk_vol, anzahl, buchungs_zeit)
+                    book_drink_now(marke, sorte, menge, alk_vol, anzahl, buchungs_zeit, final_lat, final_lon)
             
             # Popup nach Buchung
             if st.session_state.pop('show_success_popup', False):
@@ -662,8 +712,7 @@ def buchung_view():
                     }])
                     getraenke_df = pd.concat([getraenke_df, new_drink], ignore_index=True)
                     save_data(SHEET_GETRAENKE_DB, getraenke_df)
-                    
-                    book_drink_now(marke, sorte, menge, alk_vol, anzahl2, buchungs_zeit2)
+                    book_drink_now(marke, sorte, menge, alk_vol, anzahl2, buchungs_zeit2, final_lat, final_lon)
             
             # Popup nach manueller Buchung
             if st.session_state.pop('show_success_popup', False):
