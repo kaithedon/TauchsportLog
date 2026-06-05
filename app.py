@@ -1345,28 +1345,31 @@ def admin_view():
     with st.container(border=True):
         st.markdown("<h3 style='color: #ff4b4b;'>🚨 Abend beenden & Nullen</h3>", unsafe_allow_html=True)
         st.write("Dies verschiebt alle aktuellen Einträge in die Backup-Historie und leert das Live-Log.")
-        if st.button("Jetzt durchführen", type="primary"):
-            if not logs_df.empty:
-                backup_df = load_data(SHEET_BACKUP_HISTORY)
-                
-                # Add backup timestamp
-                logs_df['Backup_Zeitstempel'] = get_now_berlin().strftime("%Y-%m-%d %H:%M:%S")
-                
-                # Reorder to match backup columns
-                logs_df = logs_df[COLUMNS[SHEET_BACKUP_HISTORY]]
-                
-                # Append to backup
-                backup_df = pd.concat([backup_df, logs_df], ignore_index=True)
-                save_data(SHEET_BACKUP_HISTORY, backup_df)
-                
-                # Clear active log
-                empty_log = pd.DataFrame(columns=COLUMNS[SHEET_KONSUM_LOG])
-                save_data(SHEET_KONSUM_LOG, empty_log)
-                
-                st.success("Erfolgreich gesichert und genullt!")
-                st.rerun()
-            else:
-                st.info("Log ist bereits leer.")
+        
+        confirm_reset = st.checkbox("Ja, ich bin mir absolut sicher und möchte das Live-Log leeren.", key="check_reset")
+        if confirm_reset:
+            if st.button("Jetzt durchführen", type="primary"):
+                if not logs_df.empty:
+                    backup_df = load_data(SHEET_BACKUP_HISTORY)
+                    
+                    # Add backup timestamp
+                    logs_df['Backup_Zeitstempel'] = get_now_berlin().strftime("%Y-%m-%d %H:%M:%S")
+                    
+                    # Reorder to match backup columns
+                    logs_df = logs_df[COLUMNS[SHEET_BACKUP_HISTORY]]
+                    
+                    # Append to backup
+                    backup_df = pd.concat([backup_df, logs_df], ignore_index=True)
+                    save_data(SHEET_BACKUP_HISTORY, backup_df)
+                    
+                    # Clear active log
+                    empty_log = pd.DataFrame(columns=COLUMNS[SHEET_KONSUM_LOG])
+                    save_data(SHEET_KONSUM_LOG, empty_log)
+                    
+                    st.success("Erfolgreich gesichert und genullt!")
+                    st.rerun()
+                else:
+                    st.info("Log ist bereits leer.")
 
     with st.container(border=True):
         st.markdown("<h3 style='color: #ff4b4b;'>🗑️ Benutzer endgültig löschen</h3>", unsafe_allow_html=True)
@@ -1375,26 +1378,28 @@ def admin_view():
         all_users = load_data(SHEET_USER_DB)['Username'].tolist()
         user_to_delete = st.selectbox("Benutzer auswählen", all_users, key="del_user")
         
-        if st.button("Benutzer mitsamt aller Daten löschen", type="primary", key="del_btn"):
-            if user_to_delete:
-                # 1. Aus User_DB löschen
-                u_df = load_data(SHEET_USER_DB)
-                u_df = u_df[u_df['Username'] != user_to_delete]
-                save_data(SHEET_USER_DB, u_df)
-                
-                # 2. Aus Live Konsum Log löschen
-                l_df = load_data(SHEET_KONSUM_LOG)
-                if not l_df.empty:
-                    l_df = l_df[l_df['Username'] != user_to_delete]
-                    save_data(SHEET_KONSUM_LOG, l_df)
+        confirm_del = st.checkbox("Ja, ich möchte diesen Benutzer und alle seine Daten restlos vernichten.", key="check_del")
+        if confirm_del:
+            if st.button("Benutzer mitsamt aller Daten löschen", type="primary", key="del_btn"):
+                if user_to_delete:
+                    # 1. Aus User_DB löschen
+                    u_df = load_data(SHEET_USER_DB)
+                    u_df = u_df[u_df['Username'] != user_to_delete]
+                    save_data(SHEET_USER_DB, u_df)
                     
-                # 3. Aus Backup Historie löschen
-                b_df = load_data(SHEET_BACKUP_HISTORY)
-                if not b_df.empty:
-                    b_df = b_df[b_df['Username'] != user_to_delete]
-                    save_data(SHEET_BACKUP_HISTORY, b_df)
-                    
-                st.success(f"Benutzer '{user_to_delete}' wurde erfolgreich und restlos aus allen Datenbanken vernichtet!")
+                    # 2. Aus Live Konsum Log löschen
+                    l_df = load_data(SHEET_KONSUM_LOG)
+                    if not l_df.empty:
+                        l_df = l_df[l_df['Username'] != user_to_delete]
+                        save_data(SHEET_KONSUM_LOG, l_df)
+                        
+                    # 3. Aus Backup Historie löschen
+                    b_df = load_data(SHEET_BACKUP_HISTORY)
+                    if not b_df.empty:
+                        b_df = b_df[b_df['Username'] != user_to_delete]
+                        save_data(SHEET_BACKUP_HISTORY, b_df)
+                        
+                    st.success(f"Benutzer '{user_to_delete}' wurde erfolgreich und restlos aus allen Datenbanken vernichtet!")
 
 def profil_view():
     st.title("👤 Mein Profil")
