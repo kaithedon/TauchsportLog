@@ -266,11 +266,12 @@ def load_data(sheet_name):
     return _load_data_internal(sheet_name).copy()
 
 @retry(wait=wait_exponential(multiplier=1, min=1, max=10), stop=stop_after_attempt(5))
-def save_data(sheet_name, df):
+def save_data(sheet_name, df, clear_cache=True):
     ws = get_worksheet(sheet_name)
     ws.clear()
     set_with_dataframe(ws, df, include_index=False)
-    _load_data_internal.clear()
+    if clear_cache:
+        _load_data_internal.clear()
 
 def init_db():
     # Initialize all sheets
@@ -1092,8 +1093,12 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                 new_likes_str = ",".join(liked_by)
                 stories_df.at[match_idx[0], 'likes'] = new_likes_str
                 stories_df = stories_df.drop(columns=['img_str'])
-                save_data(SHEET_STORIES, stories_df)
-                st.rerun()
+                # Save but DO NOT clear cache! This prevents a global rerun, saving the dialog state!
+                save_data(SHEET_STORIES, stories_df, clear_cache=False)
+                
+                # Update the UI dataframe immediately so the fragment rerender shows the like!
+                user_stories_df.at[user_stories_df.index[story_idx], 'likes'] = new_likes_str
+                # NO st.rerun() needed! Streamlit naturally reruns the dialog.
 
     if is_own_story:
         with col_del:
