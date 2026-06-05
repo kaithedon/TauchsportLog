@@ -772,12 +772,11 @@ def social_view():
             with (c1 if i % 2 == 0 else c2):
                 with st.container(border=True):
                     if pic.startswith("data:image"):
-                        st.markdown(f'<img src="{pic}" style="border-radius: 50%; width: 60px; height: 60px; object-fit: cover; margin-bottom: 10px;">', unsafe_allow_html=True)
-                        st.markdown(f"### {uname}")
+                        img_html = f'<img src="{pic}" style="border-radius: 50%; width: 40px; height: 40px; object-fit: cover; margin-right: 10px;">'
                     else:
-                        st.markdown(f"### {pic} {uname}")
-                    st.write(f"**Promille:** {p_val} ‰")
-                    st.write(f"**Fav. Drink:** {fav_drink}")
+                        img_html = f'<span style="font-size: 25px; margin-right: 5px;">{pic}</span>'
+                        
+                    st.markdown(f'<div style="display:flex; align-items:center; margin-bottom: 8px;">{img_html}<strong style="font-size:1.2em;">{uname}</strong></div>', unsafe_allow_html=True)
                     
                     if not user_logs.empty:
                         user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
@@ -787,14 +786,15 @@ def social_view():
                         days = diff.days
                         hours = diff.seconds // 3600
                         minutes = (diff.seconds % 3600) // 60
-                        st.write(f"⏱️ **Letztes Getränk:** vor {days}T, {hours}h, {minutes}m")
-                        if st.button("🔍 Profil ansehen", key=f"btn_{uname}", use_container_width=True):
+                        
+                        st.markdown(f"<div style='line-height:1.2; margin-bottom: 10px;'><small><b>Promille:</b> <span style='color:#ff4b4b;'>{p_val} ‰</span><br><b>Fav:</b> {fav_drink}<br><b>Zuletzt:</b> vor {days}T {hours}h {minutes}m</small></div>", unsafe_allow_html=True)
+                        if st.button("📊 Profil", key=f"btn_{uname}", use_container_width=True):
                             st.session_state.view_profile_of = uname
                             st.rerun()
                     else:
-                        st.write("⏱️ **Letztes Getränk:** -")
+                        st.markdown(f"<div style='line-height:1.2; margin-bottom: 10px;'><small><b>Promille:</b> {p_val} ‰<br><b>Zuletzt:</b> -</small></div>", unsafe_allow_html=True)
 
-    st.subheader("🎉 Aktuell am Feiern (> 0.0 ‰)")
+    st.subheader("🎉 Knülle (> 0.0 ‰)")
     active_users = sorted(active_users, key=lambda x: x['p_val'], reverse=True)
     render_user_cards(active_users)
     
