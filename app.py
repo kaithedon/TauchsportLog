@@ -75,7 +75,7 @@ SHEET_STORIES = "Stories"
 
 COLUMNS = {
     SHEET_USER_DB: ["Username", "Password_Hash", "Gewicht_kg", "Groesse_cm", "Geschlecht", "Rolle", "Profilbild_Url"],
-    SHEET_GETRAENKE_DB: ["Marke", "Sorte", "Alkoholgehalt_Vol", "Standard_Menge_ml"],
+    SHEET_GETRAENKE_DB: ["Marke", "Sorte", "Alkoholgehalt_Vol", "Standard_Menge_ml", "Barcode"],
     SHEET_KONSUM_LOG: ["Log_ID", "Zeitstempel", "Username", "Marke", "Sorte", "Menge_ml", "Alk_Vol", "latitude", "longitude"],
     SHEET_GLOBALE_STATS: ["Key", "Value"],
     SHEET_BACKUP_HISTORY: ["Backup_Zeitstempel", "Log_ID", "Zeitstempel", "Username", "Marke", "Sorte", "Menge_ml", "Alk_Vol", "latitude", "longitude"],
@@ -565,6 +565,73 @@ def booking_success_popup(wa_link, label):
     with col2:
         st.link_button("📲 WhatsApp", wa_link, use_container_width=True, type="primary")
 
+import requests
+from pyzbar.pyzbar import decode
+from PIL import Image
+import io
+
+def decode_barcode(image_file):
+    try:
+        img = Image.open(image_file)
+        decoded_objects = decode(img)
+        if decoded_objects:
+            return decoded_objects[0].data.decode("utf-8")
+        return None
+    except Exception as e:
+        return None
+
+def fetch_open_food_facts(barcode):
+    try:
+        url = f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("status") == 1:
+                product = data.get("product", {})
+                marke = product.get("brands", "")
+                sorte = product.get("product_name", "")
+                
+                # Wenn beides leer ist, gib None zurück
+                if not marke and not sorte:
+                    return None
+                    
+                # Clean up multiple brands
+                if marke and "," in marke:
+                    marke = marke.split(",")[0]
+                    
+                nutriments = product.get("nutriments", {})
+                alk = nutriments.get("alcohol", 0.0)
+                if not alk: alk = nutriments.get("alcohol_value", 0.0)
+                
+                menge = product.get("quantity", "")
+                menge_ml = 500  # Default
+                if "ml" in menge.lower():
+                    try:
+                        menge_ml = int(''.join(filter(str.isdigit, menge)))
+                    except:
+                        pass
+                elif "cl" in menge.lower():
+                    try:
+                        menge_ml = int(''.join(filter(str.isdigit, menge))) * 10
+                    except:
+                        pass
+                elif "l" in menge.lower() and "ml" not in menge.lower() and "cl" not in menge.lower():
+                    try:
+                        menge_str = ''.join(c for c in menge if c.isdigit() or c == '.' or c == ',')
+                        menge_ml = int(float(menge_str.replace(',', '.')) * 1000)
+                    except:
+                        pass
+
+                return {
+                    "marke": marke,
+                    "sorte": sorte,
+                    "alk": float(alk),
+                    "menge": menge_ml
+                }
+        return None
+    except Exception as e:
+        return None
+
 def buchung_view():
     st.title("🍺 Getränke buchen")
     
@@ -624,11 +691,23 @@ def buchung_view():
             st.divider()
     
     getraenke_df = load_data(SHEET_GETRAENKE_DB)
+    if 'Barcode' not in getraenke_df.columns:
+        getraenke_df['Barcode'] = ""
+        
     drink_options = getraenke_df.apply(lambda r: f"{r['Marke']} {r['Sorte']} ({r['Standard_Menge_ml']}ml)", axis=1).tolist()
     
-    tab1, tab2 = st.tabs(["🍻 Aus Datenbank wählen", "➕ Eigenes Getränk anlegen"])
+    if "buchung_tab" not in st.session_state:
+        st.session_state.buchung_tab = "🍻 Aus Datenbank wählen"
+
+    tab_selection = st.radio(
+        "Aktion wählen:",
+        ["🍻 Aus Datenbank wählen", "📷 Barcode einscannen", "➕ Eigenes Getränk anlegen"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="buchung_tab"
+    )
     
-    with tab1:
+    if tab_selection == "🍻 Aus Datenbank wählen":
         with st.container(border=True):
             st.write("**Schnellsuche:**")
             search_term = st.text_input("🔍 Suche nach Marke oder Sorte (z.B. Licher, Wodka...)", key="search_drink")
@@ -670,24 +749,66 @@ def buchung_view():
                     menge = row['Standard_Menge_ml']
                     alk_vol = row['Alkoholgehalt_Vol']
                     book_drink_now(marke, sorte, menge, alk_vol, anzahl, buchungs_zeit, final_lat, final_lon)
-            
-            # Popup nach Buchung
-            if st.session_state.pop('show_success_popup', False):
-                booking_success_popup(
-                    st.session_state.pop('last_wa_link', '#'),
-                    st.session_state.pop('last_booked_label', 'Getränk')
-                )
 
-    with tab2:
+    elif tab_selection == "📷 Barcode einscannen":
         with st.container(border=True):
-            st.write("Ist dein Getränk nicht in der Liste? Lege es hier einmalig an:")
+            st.write("Scanne den Barcode auf der Flasche/Dose, um das Getränk automatisch zu finden.")
+            camera_image = st.camera_input("Barcode scannen", key="cam_barcode")
+            
+            if camera_image:
+                with st.spinner("Analysiere Barcode..."):
+                    barcode = decode_barcode(camera_image)
+                    if barcode:
+                        st.success(f"Barcode erkannt: {barcode}")
+                        
+                        match = getraenke_df[getraenke_df["Barcode"].astype(str) == str(barcode)]
+                        if not match.empty:
+                            row = match.iloc[0]
+                            st.info(f"✅ Getränk in Datenbank gefunden: **{row['Marke']} {row['Sorte']}** ({row['Standard_Menge_ml']}ml)")
+                            
+                            anzahl_sc = st.number_input("Anzahl", min_value=1, max_value=10, value=1, key="anz_sc")
+                            if st.button("Jetzt live einbuchen 🎯", use_container_width=True, key="btn_sc"):
+                                book_drink_now(row['Marke'], row['Sorte'], float(row['Standard_Menge_ml']), float(row['Alkoholgehalt_Vol']), anzahl_sc, get_now_berlin(), final_lat, final_lon)
+                        else:
+                            st.warning("Getränk nicht in lokaler Datenbank. Suche online...")
+                            product_data = fetch_open_food_facts(barcode)
+                            if product_data:
+                                st.session_state.prefill_barcode = barcode
+                                st.session_state.prefill_marke = product_data['marke']
+                                st.session_state.prefill_sorte = product_data['sorte']
+                                st.session_state.prefill_menge = int(product_data['menge'])
+                                st.session_state.prefill_alk = float(product_data['alk'])
+                                st.session_state.buchung_tab = "➕ Eigenes Getränk anlegen"
+                                st.rerun()
+                            else:
+                                st.session_state.prefill_barcode = barcode
+                                st.session_state.buchung_tab = "➕ Eigenes Getränk anlegen"
+                                st.rerun()
+                    else:
+                        st.error("Kein Barcode erkannt. Bitte achte auf gute Beleuchtung und halte den Code scharf in die Kamera.")
+
+    elif tab_selection == "➕ Eigenes Getränk anlegen":
+        with st.container(border=True):
+            if "prefill_barcode" in st.session_state:
+                st.info("Unbekannter Barcode! Bitte trage das Getränk einmalig hier ein, danach kennt die App es für immer.")
+            else:
+                st.write("Ist dein Getränk nicht in der Liste? Lege es hier einmalig an:")
+                
+            marke_val = st.session_state.pop("prefill_marke", "")
+            sorte_val = st.session_state.pop("prefill_sorte", "Manuell")
+            menge_val = int(st.session_state.pop("prefill_menge", 330))
+            alk_val = float(st.session_state.pop("prefill_alk", 5.0))
+            barcode_val = st.session_state.pop("prefill_barcode", "")
+                
             col1, col2 = st.columns(2)
             with col1:
-                marke = st.text_input("Marke/Name", key="m_marke")
-                menge = st.number_input("Menge (ml)", min_value=10, max_value=2000, step=10, value=330, key="m_menge")
+                marke = st.text_input("Marke/Name", value=marke_val, key="m_marke")
+                menge = st.number_input("Menge (ml)", min_value=10, max_value=2000, step=10, value=menge_val, key="m_menge")
             with col2:
-                sorte = "Manuell"
-                alk_vol = st.number_input("Alkoholgehalt (Vol%)", min_value=0.0, max_value=100.0, step=0.1, value=5.0, key="m_alk")
+                sorte = st.text_input("Sorte", value=sorte_val, key="m_sorte")
+                alk_vol = st.number_input("Alkoholgehalt (Vol%)", min_value=0.0, max_value=100.0, step=0.1, value=alk_val, key="m_alk")
+                
+            barcode = st.text_input("Barcode (EAN) - optional", value=barcode_val, key="m_barcode")
                 
             anzahl2 = st.number_input("Anzahl", min_value=1, max_value=10, value=1, key="anz_m")
             mode2 = st.radio("Zeitpunkt", ["Jetzt live einbuchen", "Nachtragen"], key="mode_m")
@@ -703,18 +824,18 @@ def buchung_view():
                     st.error("Bitte eine Marke/einen Namen eintragen.")
                 else:
                     new_drink = pd.DataFrame([{
-                        "Marke": marke, "Sorte": sorte, "Alkoholgehalt_Vol": alk_vol, "Standard_Menge_ml": menge
+                        "Marke": marke, "Sorte": sorte, "Alkoholgehalt_Vol": alk_vol, "Standard_Menge_ml": menge, "Barcode": barcode
                     }])
                     getraenke_df = pd.concat([getraenke_df, new_drink], ignore_index=True)
                     save_data(SHEET_GETRAENKE_DB, getraenke_df)
                     book_drink_now(marke, sorte, menge, alk_vol, anzahl2, buchungs_zeit2, final_lat, final_lon)
             
-            # Popup nach manueller Buchung
-            if st.session_state.pop('show_success_popup', False):
-                booking_success_popup(
-                    st.session_state.pop('last_wa_link', '#'),
-                    st.session_state.pop('last_booked_label', 'Getränk')
-                )
+    # Gemeinsames Popup für alle Tabs
+    if st.session_state.pop('show_success_popup', False):
+        booking_success_popup(
+            st.session_state.pop('last_wa_link', '#'),
+            st.session_state.pop('last_booked_label', 'Getränk')
+        )
 
     # Storno Bereich
     st.subheader("Letzte Buchungen (Storno)")
