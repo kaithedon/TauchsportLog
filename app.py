@@ -455,6 +455,14 @@ def login_view():
                 else:
                     st.error("Bitte alle Pflichtfelder ausfüllen.")
 
+def generate_whatsapp_link(username, anzahl, marke, sorte):
+    """Generiert einen wa.me-Link mit vorformulierter Nachricht."""
+    import urllib.parse
+    getraenk_str = f"{anzahl}x {marke} ({sorte})"
+    msg = f"🍺 *{username}* hat gerade {getraenk_str} eingebucht! 🥂🎉"
+    encoded = urllib.parse.quote(msg)
+    return f"https://wa.me/?text={encoded}"
+
 def book_drink_now(marke, sorte, menge, alk_vol, anzahl=1, buchungs_zeit=None):
     if buchungs_zeit is None:
         buchungs_zeit = datetime.datetime.now()
@@ -473,6 +481,7 @@ def book_drink_now(marke, sorte, menge, alk_vol, anzahl=1, buchungs_zeit=None):
     logs_df = pd.concat([logs_df, pd.DataFrame(new_logs)], ignore_index=True)
     save_data(SHEET_KONSUM_LOG, logs_df)
     st.toast(f"{anzahl}x {marke} erfolgreich verbucht!", icon="🍻")
+    st.session_state['last_wa_link'] = generate_whatsapp_link(st.session_state.username, anzahl, marke, sorte)
     st.rerun()
 
 def buchung_view():
@@ -545,6 +554,11 @@ def buchung_view():
                     alk_vol = row['Alkoholgehalt_Vol']
                     
                     book_drink_now(marke, sorte, menge, alk_vol, anzahl, buchungs_zeit)
+            
+            # WhatsApp Share Button nach Buchung
+            if st.session_state.get('last_wa_link'):
+                wa_link = st.session_state.pop('last_wa_link')
+                st.link_button("📲 In WhatsApp teilen", wa_link, use_container_width=True, type="secondary")
 
     with tab2:
         with st.container(border=True):
@@ -577,6 +591,11 @@ def buchung_view():
                     save_data(SHEET_GETRAENKE_DB, getraenke_df)
                     
                     book_drink_now(marke, sorte, menge, alk_vol, anzahl2, buchungs_zeit2)
+            
+            # WhatsApp Share Button nach manueller Buchung
+            if st.session_state.get('last_wa_link'):
+                wa_link = st.session_state.pop('last_wa_link')
+                st.link_button("📲 In WhatsApp teilen", wa_link, use_container_width=True, type="secondary")
 
     # Storno Bereich
     st.subheader("Letzte Buchungen (Storno)")
