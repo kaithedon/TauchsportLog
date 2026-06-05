@@ -807,19 +807,35 @@ def social_view():
     users_df = load_data(SHEET_USER_DB)
     logs_df = load_data(SHEET_KONSUM_LOG)
     
-    # --- LIVE FEED ---
+    # --- LIVE FEED & TAGES RANGLISTE ---
     recent_logs = logs_df.copy()
     if not recent_logs.empty:
-        st.subheader("⚡ Live Feed")
+        col_feed, col_today = st.columns(2)
+        
         recent_logs['Zeitstempel'] = pd.to_datetime(recent_logs['Zeitstempel'])
-        recent_logs = recent_logs.sort_values(by='Zeitstempel', ascending=False).head(100)
         now = pd.Timestamp.now()
         
-        with st.container(height=150):
-            for _, r in recent_logs.iterrows():
-                diff = now - r['Zeitstempel']
-                mins = int(diff.total_seconds() // 60)
-                st.markdown(f"**{r['Username']}** trank **{r['Marke']}** <small style='color:gray;'>(vor {mins}m)</small>", unsafe_allow_html=True)
+        with col_feed:
+            st.subheader("⚡ Live Feed")
+            feed_logs = recent_logs.sort_values(by='Zeitstempel', ascending=False).head(100)
+            with st.container(height=150):
+                for _, r in feed_logs.iterrows():
+                    diff = now - r['Zeitstempel']
+                    mins = int(diff.total_seconds() // 60)
+                    st.markdown(f"**{r['Username']}** trank **{r['Marke']}** <small style='color:gray;'>(vor {mins}m)</small>", unsafe_allow_html=True)
+                    
+        with col_today:
+            st.subheader("🏆 Tages Rangliste")
+            today_logs = recent_logs[recent_logs['Zeitstempel'].dt.date == now.date()]
+            with st.container(height=150):
+                if not today_logs.empty:
+                    daily_board = today_logs.groupby('Username').size().reset_index(name='Anzahl')
+                    daily_board = daily_board.sort_values(by='Anzahl', ascending=False).reset_index(drop=True)
+                    for i, row in daily_board.iterrows():
+                        medal = "🥇" if i == 0 else ("🥈" if i == 1 else ("🥉" if i == 2 else "🔹"))
+                        st.markdown(f"{medal} **{row['Username']}**: {row['Anzahl']} Drinks")
+                else:
+                    st.write("Noch keine Getränke heute.")
     
     active_users = []
     sober_users = []
