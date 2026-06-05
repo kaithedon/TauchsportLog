@@ -15,7 +15,7 @@ from tenacity import retry, wait_exponential, stop_after_attempt
 # --- PAGE CONFIG ---
 st.set_page_config(
     page_title="Tauchsportclub - Deep Dive Counter",
-    page_icon="🤿",
+    page_icon="favicon.png",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
