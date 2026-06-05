@@ -552,18 +552,21 @@ else:
     except Exception:
         pass
         
-    # Sidebar Navigation
-    with st.sidebar:
-        st.title(f"Hallo {st.session_state.username} 🤿")
-        menu = ["Getränke buchen", "Promille Status", "Social & Stats"]
-        if st.session_state.role == "Admin":
-            menu.append("Admin-Bereich")
-            
-        choice = st.radio("Navigation", menu)
+    # Top Navigation Bar
+    st.write(f"Willkommen, **{st.session_state.username}** 🤿")
+    menu = ["Getränke buchen", "Promille Status", "Social & Stats"]
+    if st.session_state.role == "Admin":
+        menu.append("Admin-Bereich")
         
-        if st.button("Logout"):
+    col_nav, col_logout = st.columns([0.85, 0.15])
+    with col_nav:
+        choice = st.radio("Navigation", menu, horizontal=True, label_visibility="collapsed")
+    with col_logout:
+        if st.button("Logout", use_container_width=True):
             st.session_state.logged_in = False
             st.rerun()
+            
+    st.divider()
             
     # Route to views
     if choice == "Getränke buchen":
