@@ -923,7 +923,19 @@ def admin_view():
                 "Eggenberg", "Murauer", "Schremser", "Hirter", "Schützengarten", "Chopfab",
                 "Carling", "Tennent's", "Hobgoblin", "Beavertown", "Fuller's", "Smithwick's",
                 "Estrella Galicia", "Moritz", "Ambar", "Sagres Bohemia", "Baladin", "Birra Moretti La Rossa",
-                "Lapin Kulta", "Norrlands Guld", "Pelforth", "Fischer", "3 Fonteinen", "Põhjala"
+                "Lapin Kulta", "Norrlands Guld", "Pelforth", "Fischer", "3 Fonteinen", "Põhjala",
+                "Svijany", "Regent", "Zlatý Bažant (Slowakei)", "Šariš", "Kaper", "Lwówek", "Namysłów",
+                "La Chouffe Blonde", "Mc Chouffe", "Duvel Tripel Hop", "Karmeliet Tripel", "Kwak",
+                "St. Bernardus", "Tongerlo", "Affligem", "Delirium Red", "Lindemans (Kriek/Lambic)",
+                "Heineken Silver", "Brand Brauerei", "Texels Skuumkoppe", "Jopen",
+                "Gösser Stiftsbräu", "Murauer Märzen", "Villacher", "Fohrenburger", "Eggenberg Urbock",
+                "Eichhof", "Appenzeller Bier", "Chopfab Hell", "Boxer Bier",
+                "Guinness Hop House 13", "Kilkenny Irish Red Ale", "Carling Black Label", "Belhaven",
+                "Samuel Smith's Taddy Porter", "Fuller's London Pride", "Sharp's Atlantic Pale Ale",
+                "Estrella Damm Inedit", "Alhambra Reserva 1925", "Super Bock Stout", "Sagres Preta",
+                "Birra Moretti Autentica", "Peroni Gran Riserva", "Ichnusa Non Filtrata", "Mythos (Griechenland)", "Fix",
+                "Tuborg Grøn", "Carlsberg Elephant", "Mikkeller Peter, Pale and Mary", "AASS (Norwegen)",
+                "Mack", "Karhu (Finnland)", "Olvi", "Aldaris (Lettland)", "Kalnapilis (Litauen)", "Kronenbourg Blanc"
             ])
 
             brauereien_de_extra = [
@@ -936,6 +948,20 @@ def admin_view():
                 "Gaffel Wiess", "Peters Kölsch", "Sion Kölsch", "Mühlen Kölsch", "Dom Kölsch",
                 "Bolten Alt", "Schlüssel Alt", "Schumacher Alt", "Kürzer Alt", "Hannen Alt"
             ]
+
+            brauereien_de_extra.extend([
+                "Guxhavener", "Störtebeker", "Dithmarscher", "Herforder", "Barre", "Veltins Grevensteiner",
+                "Hasseröder", "Freiberger", "Radeberger Brauerei", "Feldschlößchen (Dresden)", "Wernesgrüner",
+                "Augustiner Maximator", "Tegernseer Max I. Joseph", "König Ludwig Dunkel", "Hacker-Pschorr Kellerbier",
+                "Kulmbacher Edelherb", "Kapuziner (Weizen)", "Mönchshof Kellerbier", "Schanzenbräu Kehlkopf",
+                "Maisel & Friends", "Crew Republic", "Kambium", "Hanscraft", "Tilmans Biere",
+                "Gutmann (Weizen)", "Kuchlbauer", "Schneider Weisse Aventinus", "Schlenkerla Rauchbier Fastenbier",
+                "Ayinger Celebrator", "Felsenkeller", "Pyraser", "Kaufbeuren Buron", "Zirndorfer",
+                "Glaabsbräu", "Schmucker", "Pfungstädter", "Michelstädter Brauhaus", "Brauhaus Faust", 
+                "Krone (Darmstadt)", "Eichbaum Ureich", "Brauhaus Knallhütte", "Hochstift Pils",
+                "Schöfferhofer Weizen", "Zunft Kölsch", "Sester Kölsch", "Küppers Kölsch",
+                "Uerige Sticke", "Brauerei zum Schlüssel", "Diebels Alt", "Frankenheim Alt"
+            ])
             
             sorten_de = [
                 {"Sorte": "Pils (0.33l)", "Vol": 4.8, "Menge": 330},
