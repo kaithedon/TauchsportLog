@@ -978,17 +978,23 @@ def upload_story_dialog():
         if st.button("🚀 Story posten", type="primary", use_container_width=True):
             try:
                 img = Image.open(uploaded_file)
-                # Resize keeping aspect ratio, max width 600px
-                if img.width > 600:
-                    new_height = int(img.height * (600 / img.width))
-                    img = img.resize((600, new_height), Image.Resampling.LANCZOS)
+                # We must ensure the Base64 string is < 50,000 chars for Google Sheets!
+                # 1. Resize to max 400x400 (keeps aspect ratio)
+                img.thumbnail((400, 400), Image.Resampling.LANCZOS)
                 
                 if img.mode != 'RGB':
                     img = img.convert('RGB')
                     
-                buffer = io.BytesIO()
-                img.save(buffer, format="JPEG", quality=70)
-                base64_data = base64.b64encode(buffer.getvalue()).decode()
+                quality = 80
+                base64_data = ""
+                # 2. Compress until it fits
+                while True:
+                    buffer = io.BytesIO()
+                    img.save(buffer, format="JPEG", quality=quality)
+                    base64_data = base64.b64encode(buffer.getvalue()).decode()
+                    if len(base64_data) < 45000 or quality <= 10:
+                        break
+                    quality -= 10
                 
                 stories_df = load_data(SHEET_STORIES)
                 new_row = pd.DataFrame([{
