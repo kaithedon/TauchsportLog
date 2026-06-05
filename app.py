@@ -1525,6 +1525,32 @@ def profil_view():
                     save_data(SHEET_USER_DB, users_df)
                     st.success("Passwort erfolgreich geändert!")
 
+def welt_view():
+    st.title("🌍 Weltkarte der Getränke")
+    st.write("Hier siehst du, wo wir schon überall getrunken haben!")
+    
+    logs_df = load_data(SHEET_KONSUM_LOG)
+    if logs_df.empty:
+        st.info("Noch keine Getränke mit Standort gebucht.")
+        return
+        
+    map_df = logs_df.copy()
+    # Konvertiere Koordinaten in Floats
+    map_df['latitude'] = pd.to_numeric(map_df['latitude'], errors='coerce')
+    map_df['longitude'] = pd.to_numeric(map_df['longitude'], errors='coerce')
+    
+    # Lösche Reihen ohne gültige Koordinaten
+    map_df = map_df.dropna(subset=['latitude', 'longitude'])
+    
+    if map_df.empty:
+        st.info("Bisher wurden noch keine Getränke mit aktivierter Standort-Erfassung gebucht.")
+        return
+        
+    # Anzahl der Getränke pro Standort (Gruppieren)
+    st.map(map_df, latitude='latitude', longitude='longitude', size=150, color='#ff4b4b', zoom=1)
+    
+    st.caption(f"Insgesamt {len(map_df)} markierte Getränke auf der Welt.")
+
 # --- MAIN LOGIC ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
@@ -1556,8 +1582,8 @@ else:
             st.session_state.logged_in = False
             st.rerun()
             
-    menu = ["Live", "Getränke buchen", "Statistiken", "Mein Profil"]
-    icons = ["people", "cup-hot", "bar-chart-line", "person"]
+    menu = ["Live", "Getränke buchen", "Statistiken", "Mein Profil", "Welt"]
+    icons = ["people", "cup-hot", "bar-chart-line", "person", "globe"]
     if st.session_state.role == "Admin":
         menu.append("Admin-Bereich")
         icons.append("gear")
@@ -1585,6 +1611,8 @@ else:
         social_view()
     elif choice == "Mein Profil":
         profil_view()
+    elif choice == "Welt":
+        welt_view()
     elif choice == "Admin-Bereich":
         admin_view()
 
