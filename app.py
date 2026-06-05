@@ -988,8 +988,8 @@ def upload_story_dialog():
                 with st.spinner("Bild wird verarbeitet & hochgeladen..."):
                     img = Image.open(uploaded_file)
                     # We must ensure the Base64 string is < 50,000 chars for Google Sheets!
-                    # 1. Resize to max 600x600 (keeps aspect ratio for better quality)
-                    img.thumbnail((600, 600), Image.Resampling.LANCZOS)
+                    # 1. Resize to max 800x800 for higher PPI (keeps aspect ratio)
+                    img.thumbnail((800, 800), Image.Resampling.LANCZOS)
                 
                 if img.mode != 'RGB':
                     img = img.convert('RGB')
@@ -1026,7 +1026,8 @@ def upload_story_dialog():
                 time.sleep(1)
                 st.rerun()
 
-def render_story_view(username, story_idx, user_stories_df, ordered_active_users):
+@st.dialog("Story")
+def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users):
     story = user_stories_df.iloc[story_idx]
     image_data = story['image_data']
     
@@ -1234,8 +1235,7 @@ def render_stories_bar():
             st.session_state.tracked_story_user = story_user
             st.session_state.tracked_story_idx = story_idx
                 
-        render_story_view(story_user, story_idx, user_stories, ordered_active_users)
-        return True
+        view_story_dialog(story_user, story_idx, user_stories, ordered_active_users)
 
     import urllib.parse
     q_params = dict(st.query_params)
@@ -1329,9 +1329,7 @@ def social_view():
         public_profile_view(st.session_state.view_profile_of)
         return
         
-    is_story_open = render_stories_bar()
-    if is_story_open:
-        return
+    render_stories_bar()
         
     st.title("Live")
     
