@@ -979,10 +979,11 @@ def upload_story_dialog():
         if st.button("🚀 Story posten", type="primary", use_container_width=True):
             upload_success = False
             try:
-                img = Image.open(uploaded_file)
-                # We must ensure the Base64 string is < 50,000 chars for Google Sheets!
-                # 1. Resize to max 600x600 (keeps aspect ratio for better quality)
-                img.thumbnail((600, 600), Image.Resampling.LANCZOS)
+                with st.spinner("Bild wird verarbeitet & hochgeladen..."):
+                    img = Image.open(uploaded_file)
+                    # We must ensure the Base64 string is < 50,000 chars for Google Sheets!
+                    # 1. Resize to max 600x600 (keeps aspect ratio for better quality)
+                    img.thumbnail((600, 600), Image.Resampling.LANCZOS)
                 
                 if img.mode != 'RGB':
                     img = img.convert('RGB')
@@ -997,6 +998,7 @@ def upload_story_dialog():
                     if len(base64_data) < 45000 or quality <= 10:
                         break
                     quality -= 10
+                
                 
                 stories_df = load_data(SHEET_STORIES)
                 new_row = pd.DataFrame([{
@@ -1056,21 +1058,29 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
     with col2:
         if username == st.session_state.username:
             if st.button("🗑️ Löschen", use_container_width=True, type="secondary"):
-                stories_df = load_data(SHEET_STORIES)
-                drop_mask = (stories_df['username'] == username) & (stories_df['timestamp'] == story['timestamp'])
-                drop_idx = stories_df[drop_mask].index
-                if not drop_idx.empty:
-                    stories_df = stories_df.drop(drop_idx)
-                    save_data(SHEET_STORIES, stories_df)
-                    st.success("Story gelöscht!")
+                with st.spinner("Lösche Story..."):
+                    stories_df = load_data(SHEET_STORIES)
+                    target_dt = pd.to_datetime(story['timestamp'])
+                    stories_df['dt'] = pd.to_datetime(stories_df['timestamp'])
                     
-                    del st.query_params["view_story"]
-                    if "story_idx" in st.query_params:
-                        del st.query_params["story_idx"]
+                    drop_mask = (stories_df['username'] == username) & (stories_df['dt'] == target_dt)
+                    drop_idx = stories_df[drop_mask].index
+                    
+                    if not drop_idx.empty:
+                        stories_df = stories_df.drop(drop_idx)
+                        stories_df = stories_df.drop(columns=['dt'])
+                        save_data(SHEET_STORIES, stories_df)
+                        st.success("Story gelöscht!")
                         
-                    import time
-                    time.sleep(1)
-                    st.rerun()
+                        del st.query_params["view_story"]
+                        if "story_idx" in st.query_params:
+                            del st.query_params["story_idx"]
+                            
+                        import time
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.error("Story nicht gefunden!")
                     
     with col3:
         if st.button("▶", use_container_width=True):
