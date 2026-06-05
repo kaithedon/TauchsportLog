@@ -634,6 +634,10 @@ def buchung_view():
         st.info("Noch keine Getränke heute gebucht.")
 
 def statistik_view():
+    if st.session_state.get('view_profile_of'):
+        public_profile_view(st.session_state.view_profile_of)
+        return
+        
     st.title("🏆 Statistiken")
     
     users_df = load_data(SHEET_USER_DB)
@@ -682,7 +686,23 @@ def statistik_view():
     
     if not stats_df.empty:
         winner = stats_df.iloc[0]
-        st.success(f"👑 **All-Time King:** Wir verneigen uns vor **{winner['Taucher']}** mit unfassbaren **{winner['Getränke']} Drinks** ({winner['Volumen (L)']} Liter)! Prost! 🍻")
+        winner_name = winner['Taucher']
+        winner_row = users_df[users_df['Username'] == winner_name].iloc[0]
+        pic = winner_row['Profilbild_Url']
+        
+        with st.container(border=True):
+            col1, col2 = st.columns([0.15, 0.85])
+            with col1:
+                if pic.startswith("data:image"):
+                    st.markdown(f'<img src="{pic}" style="border-radius: 50%; width: 50px; height: 50px; object-fit: cover;">', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<span style="font-size: 40px;">{pic}</span>', unsafe_allow_html=True)
+            with col2:
+                st.success(f"👑 **All-Time King:** Wir verneigen uns vor **{winner_name}** mit unfassbaren **{winner['Getränke']} Drinks** ({winner['Volumen (L)']} Liter)! Prost! 🍻")
+            
+            if st.button(f"🔍 Öffne das Profil von {winner_name}", use_container_width=True):
+                st.session_state.view_profile_of = winner_name
+                st.rerun()
     
     stats_df.index = stats_df.index + 1
     stats_df.index.name = "Rang"
