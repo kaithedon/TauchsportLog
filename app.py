@@ -665,6 +665,9 @@ def statistik_view():
         days_active = (now - first_drink_date).days + 1
         avg_per_day = round(gesamt_getraenke / max(1, days_active), 2)
         
+        daily_counts_raw = user_logs.groupby(user_logs['Zeitstempel'].dt.date).size()
+        best_day_count = daily_counts_raw.max() if not daily_counts_raw.empty else 0
+        
         promille = calc_promille(uname)
         fav_drink = user_logs['Marke'].value_counts().idxmax()
         
@@ -672,6 +675,7 @@ def statistik_view():
             "Taucher": uname,
             "Getränke": gesamt_getraenke,
             "Ø pro Tag": avg_per_day,
+            "Bester Tag": best_day_count,
             "Volumen (L)": gesamt_liter,
             "Fav. Drink": fav_drink,
             "Live Pegel (‰)": promille
@@ -760,21 +764,24 @@ def public_profile_view(uname):
     days_active = (now - first_drink_date).days + 1
     avg_per_day = round(all_time / max(1, days_active), 2)
     avg_per_active_day = round(user_logs.groupby(user_logs['Zeitstempel'].dt.date).size().mean(), 2)
+    daily_counts_raw = user_logs.groupby(user_logs['Zeitstempel'].dt.date).size()
+    best_day_count = daily_counts_raw.max() if not daily_counts_raw.empty else 0
     
     total_ml = pd.to_numeric(user_logs['Menge_ml'], errors='coerce').sum()
     total_liters = round(total_ml / 1000, 2)
     
     st.subheader("📊 Trink-Statistiken")
     c1, c2, c3, c_vol = st.columns(4)
-    c1.metric("All-Time", f"{all_time} 🍻")
-    c2.metric("Dieses Jahr", f"{this_year} 🍻")
-    c3.metric("Dieser Monat", f"{this_month} 🍻")
+    c1.metric("All-Time", f"{all_time}")
+    c2.metric("Dieses Jahr", f"{this_year}")
+    c3.metric("Dieser Monat", f"{this_month}")
     c_vol.metric("Volumen", f"{total_liters} L")
     
-    c4, c5, c6 = st.columns(3)
-    c4.metric("Diese Woche", f"{this_week} 🍻")
-    c5.metric("Ø pro Tag (Gesamt)", f"{avg_per_day} 🍻")
-    c6.metric("Ø pro Party-Tag", f"{avg_per_active_day} 🍻")
+    c4, c5, c6, c7 = st.columns(4)
+    c4.metric("Diese Woche", f"{this_week}")
+    c5.metric("Ø pro Tag (Gesamt)", f"{avg_per_day}")
+    c6.metric("Ø pro Party-Tag", f"{avg_per_active_day}")
+    c7.metric("Bester Tag", f"{best_day_count}")
     
     st.divider()
     st.subheader("📈 Getränke über die Zeit")
