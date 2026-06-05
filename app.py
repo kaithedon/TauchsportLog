@@ -701,11 +701,15 @@ def public_profile_view(uname):
     avg_per_day = round(all_time / max(1, days_active), 2)
     avg_per_active_day = round(user_logs.groupby(user_logs['Zeitstempel'].dt.date).size().mean(), 2)
     
+    total_ml = pd.to_numeric(user_logs['Menge_ml'], errors='coerce').sum()
+    total_liters = round(total_ml / 1000, 2)
+    
     st.subheader("📊 Trink-Statistiken")
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c_vol = st.columns(4)
     c1.metric("All-Time", f"{all_time} 🍻")
     c2.metric("Dieses Jahr", f"{this_year} 🍻")
     c3.metric("Dieser Monat", f"{this_month} 🍻")
+    c_vol.metric("Volumen", f"{total_liters} L")
     
     c4, c5, c6 = st.columns(3)
     c4.metric("Diese Woche", f"{this_week} 🍻")
@@ -730,44 +734,74 @@ def social_view():
     users_df = load_data(SHEET_USER_DB)
     logs_df = load_data(SHEET_KONSUM_LOG)
     
-    st.subheader("Mitglieder Live-Stats")
+    active_users = []
+    sober_users = []
     
-    col1, col2 = st.columns(2)
     for idx, user_row in users_df.iterrows():
         uname = user_row['Username']
-        pic = user_row['Profilbild_Url']
         p_val = calc_promille(uname)
-        
-        # Lieblingsgetränk
         user_logs = logs_df[logs_df['Username'] == uname]
-        fav_drink = "-"
-        if not user_logs.empty:
-            fav_drink = user_logs['Marke'].value_counts().idxmax()
+        
+        user_data = {
+            "uname": uname,
+            "pic": user_row['Profilbild_Url'],
+            "p_val": p_val,
+            "user_logs": user_logs
+        }
+        if p_val > 0.0:
+            active_users.append(user_data)
+        else:
+            sober_users.append(user_data)
             
-        with (col1 if idx % 2 == 0 else col2):
-            with st.container(border=True):
-                if pic.startswith("data:image"):
-                    st.markdown(f'<img src="{pic}" style="border-radius: 50%; width: 60px; height: 60px; object-fit: cover; margin-bottom: 10px;">', unsafe_allow_html=True)
-                    st.markdown(f"### {uname}")
-                else:
-                    st.markdown(f"### {pic} {uname}")
-                st.write(f"**Promille:** {p_val} ‰")
-                st.write(f"**Fav. Drink:** {fav_drink}")
+    def render_user_cards(users_list):
+        if not users_list:
+            st.write("Niemand in dieser Kategorie.")
+            return
+            
+        c1, c2 = st.columns(2)
+        for i, u in enumerate(users_list):
+            uname = u["uname"]
+            pic = u["pic"]
+            p_val = u["p_val"]
+            user_logs = u["user_logs"]
+            
+            fav_drink = "-"
+            if not user_logs.empty:
+                fav_drink = user_logs['Marke'].value_counts().idxmax()
                 
-                if not user_logs.empty:
-                    user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
-                    last_drink_time = user_logs['Zeitstempel'].max()
-                    now = pd.Timestamp.now()
-                    diff = now - last_drink_time
-                    days = diff.days
-                    hours = diff.seconds // 3600
-                    minutes = (diff.seconds % 3600) // 60
-                    st.write(f"⏱️ **Letztes Getränk:** vor {days}T, {hours}h, {minutes}m")
-                    if st.button("🔍 Profil ansehen", key=f"btn_{uname}", use_container_width=True):
-                        st.session_state.view_profile_of = uname
-                        st.rerun()
-                else:
-                    st.write("⏱️ **Letztes Getränk:** -")
+            with (c1 if i % 2 == 0 else c2):
+                with st.container(border=True):
+                    if pic.startswith("data:image"):
+                        st.markdown(f'<img src="{pic}" style="border-radius: 50%; width: 60px; height: 60px; object-fit: cover; margin-bottom: 10px;">', unsafe_allow_html=True)
+                        st.markdown(f"### {uname}")
+                    else:
+                        st.markdown(f"### {pic} {uname}")
+                    st.write(f"**Promille:** {p_val} ‰")
+                    st.write(f"**Fav. Drink:** {fav_drink}")
+                    
+                    if not user_logs.empty:
+                        user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
+                        last_drink_time = user_logs['Zeitstempel'].max()
+                        now = pd.Timestamp.now()
+                        diff = now - last_drink_time
+                        days = diff.days
+                        hours = diff.seconds // 3600
+                        minutes = (diff.seconds % 3600) // 60
+                        st.write(f"⏱️ **Letztes Getränk:** vor {days}T, {hours}h, {minutes}m")
+                        if st.button("🔍 Profil ansehen", key=f"btn_{uname}", use_container_width=True):
+                            st.session_state.view_profile_of = uname
+                            st.rerun()
+                    else:
+                        st.write("⏱️ **Letztes Getränk:** -")
+
+    st.subheader("🎉 Aktuell am Feiern (> 0.0 ‰)")
+    active_users = sorted(active_users, key=lambda x: x['p_val'], reverse=True)
+    render_user_cards(active_users)
+    
+    st.divider()
+    
+    st.subheader("🧊 Nüchtern (0.0 ‰)")
+    render_user_cards(sober_users)
 
     st.divider()
     
