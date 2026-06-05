@@ -16,7 +16,7 @@ from tenacity import retry, wait_exponential, stop_after_attempt
 st.set_page_config(
     page_title="Tauchsportclub - Deep Dive Counter",
     page_icon="🤿",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="collapsed"
 )
 
@@ -25,8 +25,8 @@ st.markdown("""
     <style>
     /* Layout/Padding Fix für Mobilgeräte */
     .block-container {
-        padding-left: 0.8rem !important;
-        padding-right: 0.8rem !important;
+        padding-left: 0.2rem !important;
+        padding-right: 0.2rem !important;
         padding-top: 1.5rem !important;
         padding-bottom: 1.5rem !important;
     }
