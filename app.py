@@ -864,10 +864,14 @@ def statistik_view():
         merged['Emoji'] = merged.apply(lambda row: user_emoji_map.get(row['Username'], "") if row['Is_Last'] == True else "", axis=1)
         merged['Image_Url'] = merged.apply(lambda row: user_image_map.get(row['Username'], None) if row['Is_Last'] == True else None, axis=1)
         
+        # Namen für die Legende mit All-Time Anzahl erweitern
+        max_drinks = merged.groupby('Username')['All-Time Getränke'].max().to_dict()
+        merged['Legend_Name'] = merged['Username'].apply(lambda u: f"({int(max_drinks[u])}) {u}")
+        
         base = alt.Chart(merged).encode(
             x=alt.X('Datum:T', axis=alt.Axis(format='%d.%m.', tickCount='day', title='Datum')),
             y=alt.Y('All-Time Getränke:Q', title='Getränke Gesamt'),
-            color=alt.Color('Username:N', legend=alt.Legend(title="Taucher"))
+            color=alt.Color('Legend_Name:N', legend=alt.Legend(title="Taucher", orient="right"))
         )
         
         line = base.mark_line(point=alt.OverlayMarkDef(size=60))
@@ -875,9 +879,9 @@ def statistik_view():
         text = base.transform_filter(
             'datum.Emoji != ""'
         ).mark_text(
-            align='left',
-            dx=8,
-            dy=-8,
+            align='right',
+            dx=-10,
+            dy=-15,
             fontSize=16
         ).encode(
             text='Emoji:N'
@@ -886,9 +890,9 @@ def statistik_view():
         image = base.transform_filter(
             'isValid(datum.Image_Url)'
         ).mark_image(
-            align='center',
-            dx=20,
-            dy=-10,
+            align='right',
+            dx=-15,
+            dy=-15,
             width=25,
             height=25
         ).encode(
