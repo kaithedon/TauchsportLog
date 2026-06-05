@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from streamlit_gsheets import GSheetsConnection
+import gspread
+from gspread_dataframe import set_with_dataframe, get_as_dataframe
 import hashlib
 import datetime
 import uuid
@@ -124,34 +125,49 @@ DEFAULT_DRINKS = [
 
 # --- DATABASE HELPERS ---
 @st.cache_resource
-def get_connection():
+def get_gspread_client():
     try:
-        return st.connection("gsheets", type=GSheetsConnection)
+        # Streamlit secrets dict needs to be converted to a normal dict for gspread
+        creds_dict = dict(st.secrets["connections"]["gsheets"])
+        
+        # If public link without service account is used, this will fail. We need the service account.
+        if "type" not in creds_dict:
+            st.error("Bitte trage die Service Account Daten in die secrets.toml ein.")
+            st.stop()
+            
+        client = gspread.service_account_from_dict(creds_dict)
+        spreadsheet_url = creds_dict.get("spreadsheet")
+        sheet = client.open_by_url(spreadsheet_url)
+        return sheet
     except Exception as e:
         st.error(f"Datenbankverbindung fehlgeschlagen. Bitte .streamlit/secrets.toml prüfen. Fehler: {e}")
         st.stop()
 
-conn = get_connection()
+def get_worksheet(sheet_name):
+    sheet = get_gspread_client()
+    try:
+        return sheet.worksheet(sheet_name)
+    except gspread.exceptions.WorksheetNotFound:
+        # Create it if it doesn't exist
+        st.info(f"Tabellenblatt '{sheet_name}' wird erstellt...")
+        return sheet.add_worksheet(title=sheet_name, rows="1000", cols="20")
 
 def load_data(sheet_name):
-    try:
-        df = conn.read(worksheet=sheet_name, ttl=0)
-        # Ensure correct columns if sheet is empty or newly created by read
-        if df.empty or len(df.columns) == 0 or list(df.columns) == [0]:
-            return pd.DataFrame(columns=COLUMNS[sheet_name])
-        return df
-    except Exception as e:
-        # If worksheet does not exist, gspread will throw an error, we try to create an empty df and update
-        df = pd.DataFrame(columns=COLUMNS[sheet_name])
-        try:
-            conn.update(worksheet=sheet_name, data=df)
-            return df
-        except Exception as e2:
-            st.error(f"Konnte Tabelle '{sheet_name}' nicht lesen oder erstellen. Bitte in Google Sheets manuell als leeres Tabellenblatt anlegen. Details: {e2}")
-            st.stop()
+    ws = get_worksheet(sheet_name)
+    # Read everything into a dataframe
+    # Drop rows where all elements are NaN
+    df = get_as_dataframe(ws, evaluate_formulas=True)
+    df = df.dropna(how='all')
+    
+    if df.empty or len(df.columns) == 0:
+        return pd.DataFrame(columns=COLUMNS[sheet_name])
+        
+    return df
 
 def save_data(sheet_name, df):
-    conn.update(worksheet=sheet_name, data=df)
+    ws = get_worksheet(sheet_name)
+    ws.clear()
+    set_with_dataframe(ws, df, include_index=False)
 
 def init_db():
     # Initialize all sheets

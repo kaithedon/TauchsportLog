@@ -1,5 +1,5 @@
 streamlit==1.35.0
-st-gsheets-connection
+gspread
+gspread-dataframe
 pandas==2.2.2
 numpy==1.26.4
-gspread
