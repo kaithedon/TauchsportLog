@@ -696,18 +696,30 @@ def buchung_view():
         
     drink_options = getraenke_df.apply(lambda r: f"{r['Marke']} {r['Sorte']} ({r['Standard_Menge_ml']}ml)", axis=1).tolist()
     
-    if "buchung_tab" not in st.session_state:
-        st.session_state.buchung_tab = "🍻 Aus Datenbank wählen"
+    if "buchung_tab_val" not in st.session_state:
+        st.session_state.buchung_tab_val = "🍻 Aus Datenbank wählen"
+
+    def change_tab():
+        st.session_state.buchung_tab_val = st.session_state.radio_buchung_tab
+
+    tab_options = ["🍻 Aus Datenbank wählen", "📷 Barcode einscannen", "➕ Eigenes Getränk anlegen"]
+    try:
+        idx = tab_options.index(st.session_state.buchung_tab_val)
+    except:
+        idx = 0
 
     tab_selection = st.radio(
         "Aktion wählen:",
-        ["🍻 Aus Datenbank wählen", "📷 Barcode einscannen", "➕ Eigenes Getränk anlegen"],
+        tab_options,
+        index=idx,
         horizontal=True,
         label_visibility="collapsed",
-        key="buchung_tab"
+        key="radio_buchung_tab",
+        on_change=change_tab
     )
     
-    if tab_selection == "🍻 Aus Datenbank wählen":
+    # Der aktuelle Tab ist st.session_state.buchung_tab_val
+    if st.session_state.buchung_tab_val == "🍻 Aus Datenbank wählen":
         with st.container(border=True):
             st.write("**Schnellsuche:**")
             search_term = st.text_input("🔍 Suche nach Marke oder Sorte (z.B. Licher, Wodka...)", key="search_drink")
@@ -750,7 +762,7 @@ def buchung_view():
                     alk_vol = row['Alkoholgehalt_Vol']
                     book_drink_now(marke, sorte, menge, alk_vol, anzahl, buchungs_zeit, final_lat, final_lon)
 
-    elif tab_selection == "📷 Barcode einscannen":
+    elif st.session_state.buchung_tab_val == "📷 Barcode einscannen":
         with st.container(border=True):
             st.write("Scanne den Barcode auf der Flasche/Dose, um das Getränk automatisch zu finden.")
             camera_image = st.camera_input("Barcode scannen", key="cam_barcode")
@@ -783,12 +795,12 @@ def buchung_view():
                                     st.session_state.prefill_sorte = product_data['sorte']
                                     st.session_state.prefill_menge = int(product_data['menge'])
                                     st.session_state.prefill_alk = float(product_data['alk'])
-                                st.session_state.buchung_tab = "➕ Eigenes Getränk anlegen"
+                                st.session_state.buchung_tab_val = "➕ Eigenes Getränk anlegen"
                                 st.rerun()
                     else:
                         st.error("Kein Barcode erkannt. Bitte achte auf gute Beleuchtung und halte den Code scharf in die Kamera.")
 
-    elif tab_selection == "➕ Eigenes Getränk anlegen":
+    elif st.session_state.buchung_tab_val == "➕ Eigenes Getränk anlegen":
         with st.container(border=True):
             if "prefill_barcode" in st.session_state:
                 st.info("Unbekannter Barcode! Bitte trage das Getränk einmalig hier ein, danach kennt die App es für immer.")
