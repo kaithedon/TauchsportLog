@@ -844,16 +844,25 @@ def statistik_view():
         merged = merged.sort_values(['Username', 'Datum'])
         merged['All-Time Getränke'] = merged.groupby('Username')['Getränke'].cumsum()
         
-        # Emojis abrufen
-        user_pic_map = {}
+        # Finde den letzten Tag pro User, um Emojis/Bilder nur ganz rechts anzuzeigen (spart extrem viel Payload!)
+        last_dates = merged.groupby('Username')['Datum'].max().reset_index()
+        last_dates['Is_Last'] = True
+        merged = pd.merge(merged, last_dates, on=['Username', 'Datum'], how='left')
+        
+        # Emojis & Bilder abrufen
+        user_emoji_map = {}
+        user_image_map = {}
         for _, r in users_df.iterrows():
             pic = str(r['Profilbild_Url'])
             if len(pic) < 10 and not pic.startswith("http"):
-                user_pic_map[r['Username']] = pic
+                user_emoji_map[r['Username']] = pic
+                user_image_map[r['Username']] = None
             else:
-                user_pic_map[r['Username']] = "👤"
+                user_emoji_map[r['Username']] = ""
+                user_image_map[r['Username']] = pic
                 
-        merged['Pic'] = merged['Username'].map(user_pic_map)
+        merged['Emoji'] = merged.apply(lambda row: user_emoji_map.get(row['Username'], "") if row['Is_Last'] == True else "", axis=1)
+        merged['Image_Url'] = merged.apply(lambda row: user_image_map.get(row['Username'], None) if row['Is_Last'] == True else None, axis=1)
         
         base = alt.Chart(merged).encode(
             x=alt.X('Datum:T', axis=alt.Axis(format='%d.%m.', tickCount='day', title='Datum')),
@@ -863,16 +872,30 @@ def statistik_view():
         
         line = base.mark_line(point=alt.OverlayMarkDef(size=60))
         
-        text = base.mark_text(
+        text = base.transform_filter(
+            'datum.Emoji != ""'
+        ).mark_text(
             align='left',
             dx=8,
             dy=-8,
             fontSize=16
         ).encode(
-            text='Pic:N'
+            text='Emoji:N'
         )
         
-        st.altair_chart((line + text).interactive(), use_container_width=True)
+        image = base.transform_filter(
+            'isValid(datum.Image_Url)'
+        ).mark_image(
+            align='center',
+            dx=20,
+            dy=-10,
+            width=25,
+            height=25
+        ).encode(
+            url='Image_Url:N'
+        )
+        
+        st.altair_chart((line + text + image).interactive(), use_container_width=True)
         
     st.divider()
     st.subheader("📋 Rangliste")
