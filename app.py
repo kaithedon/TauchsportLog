@@ -71,6 +71,7 @@ SHEET_KONSUM_LOG = "Konsum_Log"
 SHEET_GLOBALE_STATS = "Globale_Stats"
 SHEET_BACKUP_HISTORY = "Backup_History"
 SHEET_ACTIVATION_CODES = "Activation_Codes"
+SHEET_STORIES = "Stories"
 
 COLUMNS = {
     SHEET_USER_DB: ["Username", "Password_Hash", "Gewicht_kg", "Groesse_cm", "Geschlecht", "Rolle", "Profilbild_Url"],
@@ -78,7 +79,8 @@ COLUMNS = {
     SHEET_KONSUM_LOG: ["Log_ID", "Zeitstempel", "Username", "Marke", "Sorte", "Menge_ml", "Alk_Vol", "latitude", "longitude"],
     SHEET_GLOBALE_STATS: ["Key", "Value"],
     SHEET_BACKUP_HISTORY: ["Backup_Zeitstempel", "Log_ID", "Zeitstempel", "Username", "Marke", "Sorte", "Menge_ml", "Alk_Vol", "latitude", "longitude"],
-    SHEET_ACTIVATION_CODES: ["Code", "Used", "Used_By", "Used_At"]
+    SHEET_ACTIVATION_CODES: ["Code", "Used", "Used_By", "Used_At"],
+    SHEET_STORIES: ["username", "image_data", "timestamp"]
 }
 
 def generate_master_drinks():
@@ -962,10 +964,142 @@ def public_profile_view(uname):
     display_logs = display_logs.sort_values(by='Zeitstempel', ascending=False)
     st.dataframe(display_logs, hide_index=True, use_container_width=True)
 
+import io
+import base64
+from PIL import Image
+
+@st.dialog("📸 Neue Story")
+def upload_story_dialog():
+    st.write("Zeig allen, was du gerade trinkst!")
+    uploaded_file = st.file_uploader("Bild auswählen oder aufnehmen", type=["jpg", "jpeg", "png", "webp"])
+    
+    if uploaded_file is not None:
+        st.image(uploaded_file, caption="Vorschau", use_column_width=True)
+        if st.button("🚀 Story posten", type="primary", use_container_width=True):
+            try:
+                img = Image.open(uploaded_file)
+                # Resize keeping aspect ratio, max width 600px
+                if img.width > 600:
+                    new_height = int(img.height * (600 / img.width))
+                    img = img.resize((600, new_height), Image.Resampling.LANCZOS)
+                
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                    
+                buffer = io.BytesIO()
+                img.save(buffer, format="JPEG", quality=70)
+                base64_data = base64.b64encode(buffer.getvalue()).decode()
+                
+                stories_df = load_data(SHEET_STORIES)
+                new_row = pd.DataFrame([{
+                    "username": st.session_state.username,
+                    "image_data": "data:image/jpeg;base64," + base64_data,
+                    "timestamp": pd.Timestamp.now().isoformat()
+                }])
+                stories_df = pd.concat([stories_df, new_row], ignore_index=True)
+                save_data(SHEET_STORIES, stories_df)
+                
+                st.success("Story online!")
+                import time
+                time.sleep(1)
+                st.rerun()
+            except Exception as e:
+                st.error(f"Upload-Fehler: {e}")
+
+@st.dialog("Story")
+def view_story_dialog(username, image_data, timestamp_str):
+    try:
+        ts = pd.to_datetime(timestamp_str)
+        time_formatted = ts.strftime("%d.%m.%Y, %H:%M")
+    except:
+        time_formatted = timestamp_str
+        
+    st.markdown(f"<h4 style='text-align:center;'>Story von {username}</h4>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align:center; color:gray; font-size:14px;'>Hochgeladen am: {time_formatted} Uhr</p>", unsafe_allow_html=True)
+    st.markdown(f'<img src="{image_data}" style="width:100%; border-radius:10px;">', unsafe_allow_html=True)
+
+def render_stories_bar():
+    # Handle Dialog Triggers from Query Params
+    if st.query_params.get("upload_story"):
+        del st.query_params["upload_story"]
+        upload_story_dialog()
+        
+    story_user = st.query_params.get("view_story")
+    if story_user:
+        del st.query_params["view_story"]
+        stories_df = load_data(SHEET_STORIES)
+        if not stories_df.empty:
+            stories_df['timestamp'] = pd.to_datetime(stories_df['timestamp'])
+            user_stories = stories_df[stories_df['username'] == story_user]
+            if not user_stories.empty:
+                # Get latest story
+                latest = user_stories.sort_values(by='timestamp', ascending=False).iloc[0]
+                view_story_dialog(latest['username'], latest['image_data'], latest['timestamp'])
+
+    # Load all users and stories
+    users_df = load_data(SHEET_USER_DB)
+    stories_df = load_data(SHEET_STORIES)
+    
+    # Filter active stories (last 48 hours)
+    active_users = set()
+    if not stories_df.empty:
+        stories_df['timestamp'] = pd.to_datetime(stories_df['timestamp'])
+        now = pd.Timestamp.now()
+        active_stories = stories_df[stories_df['timestamp'] >= (now - pd.Timedelta(hours=48))]
+        active_users = set(active_stories['username'].unique())
+
+    html = '<div style="display: flex; overflow-x: auto; padding: 10px 0; gap: 15px; border-bottom: 1px solid #333; margin-bottom: 15px;">'
+    
+    # 1. Current User (with Plus Icon)
+    my_pic = users_df[users_df['Username'] == st.session_state.username]['Profilbild_Url'].values[0]
+    if not my_pic.startswith("data:image"):
+        my_pic = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+        
+    my_ring = "border: 3px solid #39ff14; padding: 2px;" if st.session_state.username in active_users else "border: 2px solid #555; padding: 2px;"
+    
+    html += f'''
+    <a href="?upload_story=true" target="_self" style="text-decoration: none; position: relative; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
+        <div style="position: relative;">
+            <img src="{my_pic}" style="width: 65px; height: 65px; border-radius: 50%; object-fit: cover; {my_ring}">
+            <div style="position: absolute; bottom: 0; right: 0; background: #ff4b4b; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; border: 2px solid #0e1117;">+</div>
+        </div>
+        <div style="text-align: center; font-size: 12px; color: #ccc; margin-top: 5px; width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Du</div>
+    </a>
+    '''
+    
+    # 2. Other Users (Active stories first, then inactive)
+    other_users = users_df[users_df['Username'] != st.session_state.username].copy()
+    
+    # Sort: active first
+    other_users['has_story'] = other_users['Username'].apply(lambda u: 1 if u in active_users else 0)
+    other_users = other_users.sort_values(by=['has_story', 'Username'], ascending=[False, True])
+    
+    for _, row in other_users.iterrows():
+        uname = row['Username']
+        pic = row['Profilbild_Url']
+        if not pic.startswith("data:image"):
+            pic = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+            
+        has_story = uname in active_users
+        ring_style = "border: 3px solid #39ff14; padding: 2px;" if has_story else "border: 2px solid #555; padding: 2px; opacity: 0.6;"
+        link = f"?view_story={uname}" if has_story else "#"
+        
+        html += f'''
+        <a href="{link}" target="_self" style="text-decoration: none; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
+            <img src="{pic}" style="width: 65px; height: 65px; border-radius: 50%; object-fit: cover; {ring_style}">
+            <div style="text-align: center; font-size: 12px; color: #ccc; margin-top: 5px; width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{uname}</div>
+        </a>
+        '''
+        
+    html += '</div>'
+    st.markdown(html, unsafe_allow_html=True)
+
 def social_view():
     if st.session_state.get('view_profile_of'):
         public_profile_view(st.session_state.view_profile_of)
         return
+        
+    render_stories_bar()
         
     st.title("Live")
     

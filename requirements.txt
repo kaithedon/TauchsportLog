@@ -7,3 +7,4 @@ streamlit-cookies-controller==0.0.3
 streamlit-option-menu==0.3.6
 pytz
 streamlit-js-eval
+Pillow
