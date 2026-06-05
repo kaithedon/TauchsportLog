@@ -20,42 +20,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- STYLING (Schwarz & Dunkelgrau) ---
+# --- STYLING ---
 st.markdown("""
     <style>
-    :root {
-        --bg-color: #121212;
-        --neon-cyan: #d4d4d4;
-        --text-color: #E2E8F0;
-        --panel-bg: #1e1e1e;
-    }
-    
-    .stApp {
-        background-color: var(--bg-color);
-        color: var(--text-color);
-    }
-    
-    /* Headers */
-    h1, h2, h3, h4, h5, h6 {
-        color: var(--neon-cyan) !important;
-        font-family: 'Courier New', Courier, monospace;
-    }
-    
-    /* Buttons */
-    .stButton>button {
-        background-color: transparent !important;
-        color: var(--neon-cyan) !important;
-        border: 2px solid var(--neon-cyan) !important;
-        border-radius: 10px !important;
-        transition: all 0.3s ease !important;
-        font-weight: bold !important;
-    }
-    .stButton>button:hover {
-        background-color: var(--neon-cyan) !important;
-        color: var(--bg-color) !important;
-        box-shadow: 0 0 15px var(--neon-cyan) !important;
-    }
-    
     /* Storno Button Special */
     .storno-btn>button {
         border-color: #ff4b4b !important;
@@ -64,19 +31,6 @@ st.markdown("""
     .storno-btn>button:hover {
         background-color: #ff4b4b !important;
         color: white !important;
-        box-shadow: 0 0 15px #ff4b4b !important;
-    }
-    
-    /* Containers / Cards */
-    [data-testid="stVerticalBlockBorderWrapper"] {
-        border-color: var(--neon-cyan) !important;
-        background-color: var(--panel-bg);
-        border-radius: 15px;
-    }
-    
-    /* Dataframes and text */
-    .stDataFrame, .stTable, p, div {
-        color: var(--text-color) !important;
     }
     
     /* Link styling for PayPal */
@@ -810,32 +764,32 @@ def social_view():
     # --- LIVE FEED & TAGES RANGLISTE ---
     recent_logs = logs_df.copy()
     if not recent_logs.empty:
-        col_feed, col_today = st.columns(2)
-        
         recent_logs['Zeitstempel'] = pd.to_datetime(recent_logs['Zeitstempel'])
         now = pd.Timestamp.now()
         
-        with col_feed:
-            st.subheader("⚡ Live Feed")
-            feed_logs = recent_logs.sort_values(by='Zeitstempel', ascending=False).head(100)
-            with st.container(height=150):
-                for _, r in feed_logs.iterrows():
-                    diff = now - r['Zeitstempel']
-                    mins = int(diff.total_seconds() // 60)
-                    st.markdown(f"**{r['Username']}** trank **{r['Marke']}** <small style='color:gray;'>(vor {mins}m)</small>", unsafe_allow_html=True)
-                    
-        with col_today:
-            st.subheader("🏆 Tages Rangliste")
-            today_logs = recent_logs[recent_logs['Zeitstempel'].dt.date == now.date()]
-            with st.container(height=150):
-                if not today_logs.empty:
-                    daily_board = today_logs.groupby('Username').size().reset_index(name='Anzahl')
-                    daily_board = daily_board.sort_values(by='Anzahl', ascending=False).reset_index(drop=True)
-                    for i, row in daily_board.iterrows():
-                        medal = "🥇" if i == 0 else ("🥈" if i == 1 else ("🥉" if i == 2 else "🔹"))
-                        st.markdown(f"{medal} **{row['Username']}**: {row['Anzahl']} Drinks")
-                else:
-                    st.write("Noch keine Getränke heute.")
+        with st.expander("⚡ Live Feed & Tages Rangliste", expanded=False):
+            col_feed, col_today = st.columns(2)
+            with col_feed:
+                st.write("**Letzte Buchungen**")
+                feed_logs = recent_logs.sort_values(by='Zeitstempel', ascending=False).head(100)
+                with st.container(height=150):
+                    for _, r in feed_logs.iterrows():
+                        diff = now - r['Zeitstempel']
+                        mins = int(diff.total_seconds() // 60)
+                        st.markdown(f"**{r['Username']}** trank **{r['Marke']}** <small style='color:gray;'>(vor {mins}m)</small>", unsafe_allow_html=True)
+                        
+            with col_today:
+                st.write("**Heute getrunken**")
+                today_logs = recent_logs[recent_logs['Zeitstempel'].dt.date == now.date()]
+                with st.container(height=150):
+                    if not today_logs.empty:
+                        daily_board = today_logs.groupby('Username').size().reset_index(name='Anzahl')
+                        daily_board = daily_board.sort_values(by='Anzahl', ascending=False).reset_index(drop=True)
+                        for i, row in daily_board.iterrows():
+                            medal = "🥇" if i == 0 else ("🥈" if i == 1 else ("🥉" if i == 2 else "🔹"))
+                            st.markdown(f"{medal} **{row['Username']}**: {row['Anzahl']} Drinks")
+                    else:
+                        st.write("Noch keine Getränke heute.")
     
     active_users = []
     sober_users = []
@@ -856,7 +810,7 @@ def social_view():
         else:
             sober_users.append(user_data)
             
-    def render_user_cards(users_list):
+    def render_user_cards(users_list, is_knuelle=True):
         if not users_list:
             st.write("Niemand in dieser Kategorie.")
             return
@@ -873,45 +827,53 @@ def social_view():
                 fav_drink = user_logs['Marke'].value_counts().idxmax()
                 
             with (c1 if i % 2 == 0 else c2):
-                with st.container(border=True):
-                    if pic.startswith("data:image"):
-                        img_html = f'<img src="{pic}" style="border-radius: 50%; width: 35px; height: 35px; object-fit: cover; margin-right: 8px;">'
-                    else:
-                        img_html = f'<span style="font-size: 22px; margin-right: 5px;">{pic}</span>'
-                        
-                    is_active = False
-                    if not user_logs.empty:
-                        user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
-                        last_drink_time = user_logs['Zeitstempel'].max()
-                        now = pd.Timestamp.now()
-                        diff = now - last_drink_time
-                        if diff.total_seconds() <= 30 * 60:
-                            is_active = True
-                            
-                    status_badge = '<span style="color: #28a745; font-size: 0.7em; margin-left: auto; font-weight: bold;">🟢 Aktiv</span>' if is_active else '<span style="color: #6c757d; font-size: 0.7em; margin-left: auto;">⚪ Inaktiv</span>'
-                        
-                    st.markdown(f'<div style="display:flex; align-items:center; margin-bottom: 2px;">{img_html}<strong style="font-size:1.0em;">{uname}</strong>{status_badge}</div>', unsafe_allow_html=True)
+                if pic.startswith("data:image"):
+                    img_html = f'<img src="{pic}" style="border-radius: 50%; width: 40px; height: 40px; object-fit: cover; margin-right: 10px;">'
+                else:
+                    img_html = f'<span style="font-size: 26px; margin-right: 8px;">{pic}</span>'
                     
-                    if not user_logs.empty:
-                        days = diff.days
-                        hours = diff.seconds // 3600
-                        minutes = (diff.seconds % 3600) // 60
+                is_active = False
+                if not user_logs.empty:
+                    user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
+                    last_drink_time = user_logs['Zeitstempel'].max()
+                    now = pd.Timestamp.now()
+                    diff = now - last_drink_time
+                    if diff.total_seconds() <= 30 * 60:
+                        is_active = True
                         
-                        st.markdown(f"<div style='line-height:1.1; margin-bottom: 5px;'><small><b>P:</b> <span style='color:#ff4b4b;'>{p_val}‰</span> | <b>Fav:</b> {fav_drink}<br><b>Zuletzt:</b> vor {days}T {hours}h {minutes}m</small></div>", unsafe_allow_html=True)
-                        if st.button("📊 Profil", key=f"btn_{uname}", use_container_width=True):
-                            st.session_state.view_profile_of = uname
-                            st.rerun()
-                    else:
-                        st.markdown(f"<div style='line-height:1.1; margin-bottom: 5px;'><small><b>P:</b> {p_val}‰<br><b>Zuletzt:</b> -</small></div>", unsafe_allow_html=True)
+                status_badge = '<span style="color: #28a745; font-size: 0.7em; margin-left: auto; font-weight: bold;">🟢 Aktiv</span>' if is_active else '<span style="color: #6c757d; font-size: 0.7em; margin-left: auto;">⚪ Inaktiv</span>'
+                
+                border_color = "#ff4b4b" if is_knuelle else "#4b8bff"
+                bg_color = "#1e1e1e"
+                
+                card_html = f"""
+                <div style="background-color: {bg_color}; padding: 12px; border-radius: 8px; border-left: 5px solid {border_color}; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                    <div style="display:flex; align-items:center; margin-bottom: 6px;">
+                        {img_html}
+                        <strong style="font-size:1.1em; color: #ffffff;">{uname}</strong>
+                        {status_badge}
+                    </div>
+                    <div style="font-size: 0.85em; color: #aaaaaa; line-height: 1.4;">
+                        <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; margin-right: 5px;"><b>P:</b> <span style="color:{border_color}; font-weight:bold;">{p_val}‰</span></span>
+                        <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;"><b>Fav:</b> {fav_drink}</span>
+                    </div>
+                </div>
+                """
+                
+                st.markdown(card_html, unsafe_allow_html=True)
+                
+                if st.button("📊 Profil", key=f"btn_{uname}", use_container_width=True):
+                    st.session_state.view_profile_of = uname
+                    st.rerun()
 
     st.subheader("Knülle (> 0.0 ‰)")
     active_users = sorted(active_users, key=lambda x: x['p_val'], reverse=True)
-    render_user_cards(active_users)
+    render_user_cards(active_users, is_knuelle=True)
     
     st.divider()
     
     st.subheader("Nüchtern (0.0 ‰)")
-    render_user_cards(sober_users)
+    render_user_cards(sober_users, is_knuelle=False)
 
 
 
