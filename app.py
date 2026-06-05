@@ -795,7 +795,6 @@ def social_view():
             st.write("Niemand in dieser Kategorie.")
             return
             
-        c1, c2 = st.columns(2)
         for i, u in enumerate(users_list):
             uname = u["uname"]
             pic = u["pic"]
@@ -806,45 +805,44 @@ def social_view():
             if not user_logs.empty:
                 fav_drink = user_logs['Marke'].value_counts().idxmax()
                 
-            with (c1 if i % 2 == 0 else c2):
-                if pic.startswith("data:image"):
-                    img_html = f'<img src="{pic}" style="border-radius: 50%; width: 40px; height: 40px; object-fit: cover; margin-right: 10px;">'
-                else:
-                    img_html = f'<span style="font-size: 26px; margin-right: 8px;">{pic}</span>'
+            if pic.startswith("data:image"):
+                img_html = f'<img src="{pic}" style="border-radius: 50%; width: 40px; height: 40px; object-fit: cover; margin-right: 10px;">'
+            else:
+                img_html = f'<span style="font-size: 26px; margin-right: 8px;">{pic}</span>'
+                
+            is_active = False
+            if not user_logs.empty:
+                user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
+                last_drink_time = user_logs['Zeitstempel'].max()
+                now = pd.Timestamp.now()
+                diff = now - last_drink_time
+                if diff.total_seconds() <= 30 * 60:
+                    is_active = True
                     
-                is_active = False
-                if not user_logs.empty:
-                    user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
-                    last_drink_time = user_logs['Zeitstempel'].max()
-                    now = pd.Timestamp.now()
-                    diff = now - last_drink_time
-                    if diff.total_seconds() <= 30 * 60:
-                        is_active = True
-                        
-                status_badge = '<span style="color: #28a745; font-size: 0.7em; margin-left: auto; font-weight: bold;">🟢 Aktiv</span>' if is_active else '<span style="color: #6c757d; font-size: 0.7em; margin-left: auto;">⚪ Inaktiv</span>'
-                
-                border_color = "#ff4b4b" if is_knuelle else "#4b8bff"
-                bg_color = "#1e1e1e"
-                
-                card_html = f"""
-                <div style="background-color: {bg_color}; padding: 12px; border-radius: 8px; border-left: 5px solid {border_color}; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
-                    <div style="display:flex; align-items:center; margin-bottom: 6px;">
-                        {img_html}
-                        <strong style="font-size:1.1em; color: #ffffff;">{uname}</strong>
-                        {status_badge}
-                    </div>
-                    <div style="font-size: 0.85em; color: #aaaaaa; line-height: 1.4;">
-                        <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; margin-right: 5px;"><b>P:</b> <span style="color:{border_color}; font-weight:bold;">{p_val}‰</span></span>
-                        <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;"><b>Fav:</b> {fav_drink}</span>
-                    </div>
+            status_badge = '<span style="color: #28a745; font-size: 0.7em; margin-left: auto; font-weight: bold;">🟢 Aktiv</span>' if is_active else '<span style="color: #6c757d; font-size: 0.7em; margin-left: auto;">⚪ Inaktiv</span>'
+            
+            border_color = "#ff4b4b" if is_knuelle else "#4b8bff"
+            bg_color = "#1e1e1e"
+            
+            card_html = f"""
+            <div style="background-color: {bg_color}; padding: 12px; border-radius: 8px; border-left: 5px solid {border_color}; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                <div style="display:flex; align-items:center; margin-bottom: 6px;">
+                    {img_html}
+                    <strong style="font-size:1.1em; color: #ffffff;">{uname}</strong>
+                    {status_badge}
                 </div>
-                """
-                
-                st.markdown(card_html, unsafe_allow_html=True)
-                
-                if st.button("📊 Profil", key=f"btn_{uname}", use_container_width=True):
-                    st.session_state.view_profile_of = uname
-                    st.rerun()
+                <div style="font-size: 0.85em; color: #aaaaaa; line-height: 1.4;">
+                    <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; margin-right: 5px;"><b>P:</b> <span style="color:{border_color}; font-weight:bold;">{p_val}‰</span></span>
+                    <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;"><b>Fav:</b> {fav_drink}</span>
+                </div>
+            </div>
+            """
+            
+            st.markdown(card_html, unsafe_allow_html=True)
+            
+            if st.button("📊 Profil", key=f"btn_{uname}", use_container_width=True):
+                st.session_state.view_profile_of = uname
+                st.rerun()
 
     st.subheader("Knülle (> 0.0 ‰)")
     active_users = sorted(active_users, key=lambda x: x['p_val'], reverse=True)
