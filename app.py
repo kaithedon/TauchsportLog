@@ -1199,15 +1199,22 @@ def upload_story_dialog():
                     img = img.convert('RGB')
                     
                 quality = 80
+                max_size = 800
                 base64_data = ""
                 # 2. Compress until it fits
                 while True:
                     buffer = io.BytesIO()
                     img.save(buffer, format="JPEG", quality=quality)
                     base64_data = base64.b64encode(buffer.getvalue()).decode()
-                    if len(base64_data) < 45000 or quality <= 10:
+                    if len(base64_data) < 45000:
                         break
-                    quality -= 10
+                    if quality > 20:
+                        quality -= 15
+                    else:
+                        # Shrink image dimension if quality reduction isn't enough
+                        max_size = int(max_size * 0.75)
+                        img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+                        quality = 60
                 
                 
                 stories_df = load_data(SHEET_STORIES)
@@ -1276,6 +1283,7 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
         if has_prev:
             if st.button("◀ Zurück", use_container_width=True, key=f"prev_btn_{username}_{story_idx}"):
                 if story_idx > 0:
+                    st.session_state.tracked_story_user = username
                     st.session_state.tracked_story_idx = story_idx - 1
                     st.query_params["view_story"] = username
                     st.query_params["story_idx"] = str(story_idx - 1)
@@ -1350,6 +1358,7 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
         if has_next:
             if st.button("Weiter ▶", use_container_width=True, key=f"next_btn_{username}_{story_idx}"):
                 if story_idx < len(user_stories_df) - 1:
+                    st.session_state.tracked_story_user = username
                     st.session_state.tracked_story_idx = story_idx + 1
                     st.query_params["view_story"] = username
                     st.query_params["story_idx"] = str(story_idx + 1)
