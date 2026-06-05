@@ -1026,8 +1026,7 @@ def upload_story_dialog():
                 time.sleep(1)
                 st.rerun()
 
-@st.dialog("Story")
-def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users):
+def render_story_view(username, story_idx, user_stories_df, ordered_active_users):
     story = user_stories_df.iloc[story_idx]
     image_data = story['image_data']
     
@@ -1104,11 +1103,8 @@ def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users
                 new_likes_str = ",".join(liked_by)
                 stories_df.at[match_idx[0], 'likes'] = new_likes_str
                 stories_df = stories_df.drop(columns=['img_str'])
-                # Save but DO NOT clear cache! This prevents a global rerun, saving the dialog state!
-                save_data(SHEET_STORIES, stories_df, clear_cache=False)
-                
-                # Store updated likes in session state to update UI instantly without mutating dialog arguments!
-                st.session_state[temp_likes_key] = new_likes_str
+                save_data(SHEET_STORIES, stories_df)
+                st.rerun()
 
     if is_own_story:
         with col_del:
@@ -1237,7 +1233,8 @@ def render_stories_bar():
             st.session_state.tracked_story_user = story_user
             st.session_state.tracked_story_idx = story_idx
                 
-        view_story_dialog(story_user, story_idx, user_stories, ordered_active_users)
+        render_story_view(story_user, story_idx, user_stories, ordered_active_users)
+        return True
 
     import urllib.parse
     q_params = dict(st.query_params)
@@ -1331,7 +1328,9 @@ def social_view():
         public_profile_view(st.session_state.view_profile_of)
         return
         
-    render_stories_bar()
+    is_story_open = render_stories_bar()
+    if is_story_open:
+        return
         
     st.title("Live")
     
