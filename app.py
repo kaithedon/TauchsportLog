@@ -790,20 +790,38 @@ def buchung_view():
                                 product_data = fetch_open_food_facts(barcode)
                                 
                             if product_data:
-                                st.info(f"🌐 Online gefunden: **{product_data['marke']} {product_data['sorte']}**")
-                            else:
-                                st.error("🌐 Auch online leider unbekannt.")
-                            
-                            st.write("Möchtest du dieses Getränk manuell anlegen?")
-                            if st.button("Getränk mit gescanntem Barcode anlegen", use_container_width=True):
-                                st.session_state.prefill_barcode = barcode
-                                if product_data:
+                                st.info(f"🌐 Online gefunden: **{product_data['marke']} {product_data['sorte']}** ({product_data['menge']}ml, {product_data['alk']}%)")
+                                
+                                anzahl_api = st.number_input("Anzahl", min_value=1, max_value=10, value=1, key="anz_api")
+                                if st.button("Für alle Speichern & Jetzt live einbuchen 🎯", use_container_width=True, key="btn_api"):
+                                    new_drink = pd.DataFrame([{
+                                        "Marke": product_data['marke'], 
+                                        "Sorte": product_data['sorte'], 
+                                        "Alkoholgehalt_Vol": product_data['alk'], 
+                                        "Standard_Menge_ml": product_data['menge'], 
+                                        "Barcode": barcode
+                                    }])
+                                    getraenke_df = pd.concat([getraenke_df, new_drink], ignore_index=True)
+                                    save_data(SHEET_GETRAENKE_DB, getraenke_df)
+                                    book_drink_now(product_data['marke'], product_data['sorte'], float(product_data['menge']), float(product_data['alk']), anzahl_api, get_now_berlin(), final_lat, final_lon)
+                                
+                                st.write("---")
+                                st.write("Möchtest du Name oder Alkoholgehalt noch anpassen?")
+                                if st.button("Werte bearbeiten", use_container_width=True):
+                                    st.session_state.prefill_barcode = barcode
                                     st.session_state.prefill_marke = product_data['marke']
                                     st.session_state.prefill_sorte = product_data['sorte']
                                     st.session_state.prefill_menge = int(product_data['menge'])
                                     st.session_state.prefill_alk = float(product_data['alk'])
-                                st.session_state.buchung_tab_val = "➕ Eigenes Getränk anlegen"
-                                st.rerun()
+                                    st.session_state.buchung_tab_val = "➕ Eigenes Getränk anlegen"
+                                    st.rerun()
+                            else:
+                                st.error("🌐 Auch online leider unbekannt.")
+                                st.write("Möchtest du dieses Getränk manuell anlegen?")
+                                if st.button("Getränk mit gescanntem Barcode anlegen", use_container_width=True):
+                                    st.session_state.prefill_barcode = barcode
+                                    st.session_state.buchung_tab_val = "➕ Eigenes Getränk anlegen"
+                                    st.rerun()
                     else:
                         st.error("Kein Barcode erkannt. Bitte achte auf gute Beleuchtung und halte den Code scharf in die Kamera.")
 
