@@ -976,6 +976,7 @@ def upload_story_dialog():
     if uploaded_file is not None:
         st.image(uploaded_file, caption="Vorschau", use_column_width=True)
         if st.button("🚀 Story posten", type="primary", use_container_width=True):
+            upload_success = False
             try:
                 img = Image.open(uploaded_file)
                 # We must ensure the Base64 string is < 50,000 chars for Google Sheets!
@@ -1006,11 +1007,14 @@ def upload_story_dialog():
                 save_data(SHEET_STORIES, stories_df)
                 
                 st.success("Story online!")
+                upload_success = True
+            except Exception as e:
+                st.error(f"Upload-Fehler: {e}")
+                
+            if upload_success:
                 import time
                 time.sleep(1)
                 st.rerun()
-            except Exception as e:
-                st.error(f"Upload-Fehler: {e}")
 
 @st.dialog("Story")
 def view_story_dialog(username, image_data, timestamp_str):
