@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>
+        function sendMessageToStreamlitClient(type, data) {
+            window.parent.postMessage({
+                isStreamlitMessage: true,
+                type: type,
+                ...data
+            }, "*");
+        }
+
+        function init() {
+            sendMessageToStreamlitClient("streamlit:componentReady", {apiVersion: 1});
+            sendMessageToStreamlitClient("streamlit:setFrameHeight", {height: 0});
+        }
+
+        window.addEventListener("message", function(event) {
+            if (event.data.type === "streamlit:render") {
+                if (!window.gpsRequested) {
+                    window.gpsRequested = true;
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            function(pos) {
+                                sendMessageToStreamlitClient("streamlit:setComponentValue", {
+                                    value: {lat: pos.coords.latitude, lon: pos.coords.longitude}
+                                });
+                            },
+                            function(err) {
+                                sendMessageToStreamlitClient("streamlit:setComponentValue", {
+                                    value: {error: err.message}
+                                });
+                            },
+                            { enableHighAccuracy: true, timeout: 10000 }
+                        );
+                    } else {
+                        sendMessageToStreamlitClient("streamlit:setComponentValue", {
+                            value: {error: "Browser does not support geolocation"}
+                        });
+                    }
+                }
+            }
+        });
+        
+        // Initialize the component
+        init();
+    </script>
+</head>
+<body></body>
+</html>

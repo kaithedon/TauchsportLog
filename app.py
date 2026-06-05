@@ -569,46 +569,32 @@ def buchung_view():
         st.checkbox("Standort beim Buchen automatisch erfassen", key="gps_active")
         st.caption("Wird für deinen nächsten Besuch gemerkt.")
         
+        final_lat = None
+        final_lon = None
+        
         if st.session_state.gps_active:
-            st.success("🟢 Standort-Erfassung ist AKTIV")
+            from gps_component import get_gps_auto
+            location = get_gps_auto(key="gps_location")
+            
+            if location and "lat" in location and "lon" in location:
+                st.session_state['cached_lat'] = location["lat"]
+                st.session_state['cached_lon'] = location["lon"]
+            elif location and "error" in location:
+                st.error(f"GPS Fehler: {location['error']}")
+            
+            # Immer aus Cache lesen
+            final_lat = st.session_state.get('cached_lat')
+            final_lon = st.session_state.get('cached_lon')
+            
+            if final_lat and final_lon:
+                st.success(f"🟢 Standort-Erfassung ist AKTIV")
+                st.info(f"📡 {final_lat:.4f}, {final_lon:.4f}")
+            else:
+                st.warning("🔄 GPS wird gesucht...")
         else:
             st.info("🔴 Standort-Erfassung ist AUS")
-    
-    final_lat = None
-    final_lon = None
-    
-    if st.session_state.gps_active:
-        from streamlit_js_eval import streamlit_js_eval
-        location = streamlit_js_eval(
-            js_expressions="""await new Promise((resolve) => {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => resolve(JSON.stringify({lat: pos.coords.latitude, lon: pos.coords.longitude})),
-                        (err) => resolve(null),
-                        {enableHighAccuracy: true, timeout: 10000}
-                    );
-                } else {
-                    resolve(null);
-                }
-            })""",
-            key="gps_location"
-        )
-        if location:
-            import json
-            coords = json.loads(location)
-            st.session_state['cached_lat'] = coords.get("lat")
-            st.session_state['cached_lon'] = coords.get("lon")
-        
-        # Immer aus Cache lesen (überlebt Reruns)
-        final_lat = st.session_state.get('cached_lat')
-        final_lon = st.session_state.get('cached_lon')
-        
-        if final_lat and final_lon:
-            st.caption(f"📡 Koordinaten erfasst: {final_lat:.4f}, {final_lon:.4f}")
-    else:
-        # GPS deaktiviert → Cache leeren
-        st.session_state.pop('cached_lat', None)
-        st.session_state.pop('cached_lon', None)
+            st.session_state.pop('cached_lat', None)
+            st.session_state.pop('cached_lon', None)
     
     # QUICK ACCESS
     logs_df = load_data(SHEET_KONSUM_LOG)
