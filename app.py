@@ -10,6 +10,7 @@ import base64
 import io
 from PIL import Image
 from streamlit_cookies_controller import CookieController
+from streamlit_option_menu import option_menu
 
 cookie_controller = CookieController()
 
@@ -805,14 +806,9 @@ else:
         pass
         
     # Top Navigation Bar
-    st.write(f"Willkommen, **{st.session_state.username}** 🤿")
-    menu = ["Getränke buchen", "Promille Status", "Social & Stats", "Mein Profil"]
-    if st.session_state.role == "Admin":
-        menu.append("Admin-Bereich")
-        
-    col_nav, col_logout = st.columns([0.85, 0.15])
+    col_nav, col_logout = st.columns([0.85, 0.15], vertical_alignment="center")
     with col_nav:
-        choice = st.radio("Navigation", menu, horizontal=True, label_visibility="collapsed")
+        st.write(f"Willkommen, **{st.session_state.username}** 🤿")
     with col_logout:
         if st.button("Logout", use_container_width=True):
             cookie_controller.remove('tsc_user')
@@ -820,7 +816,25 @@ else:
             st.session_state.logged_in = False
             st.rerun()
             
-    st.divider()
+    menu = ["Getränke buchen", "Promille Status", "Social & Stats", "Mein Profil"]
+    icons = ["cup-hot", "activity", "people", "person"]
+    if st.session_state.role == "Admin":
+        menu.append("Admin-Bereich")
+        icons.append("gear")
+        
+    choice = option_menu(
+        menu_title=None,
+        options=menu,
+        icons=icons,
+        default_index=0,
+        orientation="horizontal",
+        styles={
+            "container": {"padding": "0!important", "margin-bottom": "1rem"},
+            "icon": {"font-size": "18px"},
+            "nav-link": {"font-size": "15px", "text-align": "center", "margin": "0px", "--hover-color": "#4b4b4b"},
+            "nav-link-selected": {"background-color": "#ff4b4b"},
+        }
+    )
             
     # Route to views
     if choice == "Getränke buchen":
