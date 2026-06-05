@@ -302,7 +302,10 @@ def get_symptom_info(promille):
 
 # --- VIEWS ---
 def login_view():
-    st.markdown("<h1 style='text-align: center;'>🤿 Tauchsportclub<br>Deep Dive Counter</h1>", unsafe_allow_html=True)
+    try:
+        st.image("banner.png", use_container_width=True)
+    except Exception:
+        st.markdown("<h1 style='text-align: center;'>🤿 Tauchsportclub<br>Deep Dive Counter</h1>", unsafe_allow_html=True)
     
     tab1, tab2 = st.tabs(["Login", "Registrierung"])
     
@@ -544,6 +547,11 @@ if 'logged_in' not in st.session_state:
 if not st.session_state.logged_in:
     login_view()
 else:
+    try:
+        st.image("banner.png", use_container_width=True)
+    except Exception:
+        pass
+        
     # Sidebar Navigation
     with st.sidebar:
         st.title(f"Hallo {st.session_state.username} 🤿")
