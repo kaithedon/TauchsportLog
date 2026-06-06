@@ -1655,7 +1655,7 @@ def social_view():
             if is_online:
                 status_html = '<div style="margin-left: auto; text-align: right; line-height: 1.1;"><span style="color: #28a745; font-size: 0.7em; font-weight: bold;">🟢 Online</span></div>'
             else:
-                status_html = f'<div style="margin-left: auto; text-align: right; line-height: 1.1;"><span style="color: #6c757d; font-size: 0.7em;">⚪ Offline</span><br><span style="color: #6c757d; font-size: 0.6em; font-style: italic;">{online_time_str}</span></div>'
+                status_html = f'<div style="margin-left: auto; text-align: right; line-height: 1.1;"><span style="color: #6c757d; font-size: 0.7em;">● Offline</span><br><span style="color: #6c757d; font-size: 0.6em; font-style: italic;">{online_time_str}</span></div>'
             
             border_color = "#ff4b4b" if is_knuelle else "#4b8bff"
             bg_color = "#1e1e1e"
