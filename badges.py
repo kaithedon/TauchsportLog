@@ -255,8 +255,9 @@ def check_user_badges(user_entries_df):
     if total_drinks >= 150: earned.append("b49")
     
     # Druckbetankung (5 drinks in 2 hours)
-    df['time_2h'] = df['Zeitstempel'].rolling('2h', on='Zeitstempel').count()
-    if (df['time_2h'] >= 5).any(): earned.append("b50")
+    if total_drinks >= 5:
+        if (df['Zeitstempel'].diff(periods=4) <= pd.Timedelta(hours=2)).any():
+            earned.append("b50")
     
     we_mask = (weekdays == 4) | (weekdays == 5) | (weekdays == 6)
     if we_mask.sum() >= 50: earned.append("b51")
