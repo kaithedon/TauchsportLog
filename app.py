@@ -1626,6 +1626,10 @@ def social_view():
                     last_drink_str = f"vor {minutes}m"
                     
             zuletzt_online = u.get("zuletzt_online", None)
+            
+            if pd.isna(zuletzt_online) and not user_logs.empty:
+                zuletzt_online = user_logs['Zeitstempel'].max()
+                
             is_online = False
             online_time_str = ""
             if pd.notna(zuletzt_online):
