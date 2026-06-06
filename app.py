@@ -370,6 +370,11 @@ def register_user(username, password, gewicht, groesse, geschlecht, profilbild, 
         return False, "Aktivierungscode wurde bereits verwendet."
         
     # Mark code as used
+    # Pandas 3.0+ Fix: Explizit zu object casten, bevor Strings reingeschrieben werden
+    for col in ['Used', 'Used_By', 'Used_At']:
+        if col in codes_df.columns:
+            codes_df[col] = codes_df[col].astype(object)
+            
     codes_df.loc[codes_df['Code'] == activation_code, 'Used'] = "TRUE"
     codes_df.loc[codes_df['Code'] == activation_code, 'Used_By'] = username
     codes_df.loc[codes_df['Code'] == activation_code, 'Used_At'] = get_now_berlin().strftime("%Y-%m-%d %H:%M:%S")
