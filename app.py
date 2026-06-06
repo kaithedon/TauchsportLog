@@ -1604,13 +1604,24 @@ def social_view():
                 img_html = f'<span style="font-size: 26px; margin-right: 8px;">{pic}</span>'
                 
             is_active = False
+            last_drink_str = "-"
             if not user_logs.empty:
                 user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
                 last_drink_time = user_logs['Zeitstempel'].max()
-                now = pd.Timestamp.now()
+                now = get_now_berlin()
                 diff = now - last_drink_time
                 if diff.total_seconds() <= 30 * 60:
                     is_active = True
+                
+                days = diff.days
+                hours = diff.seconds // 3600
+                minutes = (diff.seconds % 3600) // 60
+                if days > 0:
+                    last_drink_str = f"vor {days}T {hours}h"
+                elif hours > 0:
+                    last_drink_str = f"vor {hours}h {minutes}m"
+                else:
+                    last_drink_str = f"vor {minutes}m"
                     
             status_badge = '<span style="color: #28a745; font-size: 0.7em; margin-left: auto; font-weight: bold;">🟢 Aktiv</span>' if is_active else '<span style="color: #6c757d; font-size: 0.7em; margin-left: auto;">⚪ Inaktiv</span>'
             
@@ -1626,7 +1637,8 @@ def social_view():
                 </div>
                 <div style="font-size: 0.85em; color: #aaaaaa; line-height: 1.4;">
                     <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; margin-right: 5px;"><b>P:</b> <span style="color:{border_color}; font-weight:bold;">{p_val}‰</span></span>
-                    <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;"><b>Fav:</b> {fav_drink}</span>
+                    <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; margin-right: 5px;"><b>Fav:</b> {fav_drink}</span>
+                    <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; font-style: italic;">{last_drink_str}</span>
                 </div>
             </div>
             """
