@@ -1626,28 +1626,32 @@ def social_view():
                     last_drink_str = f"vor {minutes}m"
                     
             zuletzt_online = u.get("zuletzt_online", None)
-            online_str = "-"
+            is_online = False
+            online_time_str = ""
             if pd.notna(zuletzt_online):
                 try:
                     last_online_time = pd.to_datetime(zuletzt_online)
                     now = get_now_berlin()
                     diff = now - last_online_time
                     if diff.total_seconds() <= 10 * 60:
-                        online_str = "🟢 Online"
+                        is_online = True
                     else:
                         d_days = diff.days
                         d_hours = diff.seconds // 3600
                         d_mins = (diff.seconds % 3600) // 60
                         if d_days > 0:
-                            online_str = f"Online: vor {d_days}T {d_hours}h"
+                            online_time_str = f"vor {d_days}T {d_hours}h"
                         elif d_hours > 0:
-                            online_str = f"Online: vor {d_hours}h {d_mins}m"
+                            online_time_str = f"vor {d_hours}h {d_mins}m"
                         else:
-                            online_str = f"Online: vor {d_mins}m"
+                            online_time_str = f"vor {d_mins}m"
                 except:
                     pass
                     
-            status_badge = '<span style="color: #28a745; font-size: 0.7em; margin-left: auto; font-weight: bold;">🟢 Trinkt</span>' if is_active else '<span style="color: #6c757d; font-size: 0.7em; margin-left: auto;">⚪ Pause</span>'
+            if is_online:
+                status_html = '<div style="margin-left: auto; text-align: right; line-height: 1.1;"><span style="color: #28a745; font-size: 0.7em; font-weight: bold;">🟢 Online</span></div>'
+            else:
+                status_html = f'<div style="margin-left: auto; text-align: right; line-height: 1.1;"><span style="color: #6c757d; font-size: 0.7em;">⚪ Offline</span><br><span style="color: #6c757d; font-size: 0.6em; font-style: italic;">{online_time_str}</span></div>'
             
             border_color = "#ff4b4b" if is_knuelle else "#4b8bff"
             bg_color = "#1e1e1e"
@@ -1657,14 +1661,13 @@ def social_view():
                 <div style="display:flex; align-items:center; margin-bottom: 6px;">
                     {img_html}
                     <strong style="font-size:1.1em; color: #ffffff;">{uname}</strong>
-                    {status_badge}
+                    {status_html}
                 </div>
                 <div style="font-size: 0.85em; color: #aaaaaa; line-height: 1.4;">
                     <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; margin-right: 5px;"><b>P:</b> <span style="color:{border_color}; font-weight:bold;">{p_val}‰</span></span>
                     <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; margin-right: 5px;"><b>Fav:</b> {fav_drink}</span><br>
                     <div style="margin-top: 5px;">
                         <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; font-style: italic; margin-right: 5px;">Letzter Drink: {last_drink_str}</span>
-                        <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; font-style: italic; color: #888;">{online_str}</span>
                     </div>
                 </div>
             </div>
