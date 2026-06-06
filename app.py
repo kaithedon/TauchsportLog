@@ -262,6 +262,10 @@ def get_gspread_client():
         sheet = client.open_by_url(spreadsheet_url)
         return sheet
     except Exception as e:
+        from streamlit.runtime.scriptrunner import StopException
+        if isinstance(e, StopException):
+            raise e
+            
         st.error(f"Datenbankverbindung fehlgeschlagen. Bitte .streamlit/secrets.toml prüfen. Fehler: {e}")
         st.stop()
 
