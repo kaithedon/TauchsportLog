@@ -1638,7 +1638,7 @@ def social_view():
                 <div style="font-size: 0.85em; color: #aaaaaa; line-height: 1.4;">
                     <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; margin-right: 5px;"><b>P:</b> <span style="color:{border_color}; font-weight:bold;">{p_val}‰</span></span>
                     <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; margin-right: 5px;"><b>Fav:</b> {fav_drink}</span>
-                    <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; font-style: italic;">{last_drink_str}</span>
+                    <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; font-style: italic;">Letzter Drink: {last_drink_str}</span>
                 </div>
             </div>
             """
