@@ -75,7 +75,7 @@ SHEET_STORIES = "Stories"
 SHEET_NEWS_FEED = "News_Feed"
 
 COLUMNS = {
-    SHEET_USER_DB: ["Username", "Password_Hash", "Gewicht_kg", "Groesse_cm", "Geschlecht", "Rolle", "Profilbild_Url"],
+    SHEET_USER_DB: ["Username", "Password_Hash", "Gewicht_kg", "Groesse_cm", "Geschlecht", "Rolle", "Profilbild_Url", "Zuletzt_Online"],
     SHEET_GETRAENKE_DB: ["Marke", "Sorte", "Alkoholgehalt_Vol", "Standard_Menge_ml", "Barcode"],
     SHEET_KONSUM_LOG: ["Log_ID", "Zeitstempel", "Username", "Marke", "Sorte", "Menge_ml", "Alk_Vol", "latitude", "longitude"],
     SHEET_GLOBALE_STATS: ["Key", "Value"],
@@ -678,6 +678,7 @@ def buchung_view():
         final_lat = None
         final_lon = None
         
+
         if st.session_state.gps_active:
             from gps_component import get_gps_auto
             location = get_gps_auto(key="gps_location")
@@ -1576,7 +1577,8 @@ def social_view():
             "uname": uname,
             "pic": user_row['Profilbild_Url'],
             "p_val": p_val,
-            "user_logs": user_logs
+            "user_logs": user_logs,
+            "zuletzt_online": user_row.get('Zuletzt_Online', None)
         }
         if p_val > 0.0:
             active_users.append(user_data)
@@ -1623,7 +1625,29 @@ def social_view():
                 else:
                     last_drink_str = f"vor {minutes}m"
                     
-            status_badge = '<span style="color: #28a745; font-size: 0.7em; margin-left: auto; font-weight: bold;">🟢 Aktiv</span>' if is_active else '<span style="color: #6c757d; font-size: 0.7em; margin-left: auto;">⚪ Inaktiv</span>'
+            zuletzt_online = u.get("zuletzt_online", None)
+            online_str = "-"
+            if pd.notna(zuletzt_online):
+                try:
+                    last_online_time = pd.to_datetime(zuletzt_online)
+                    now = get_now_berlin()
+                    diff = now - last_online_time
+                    if diff.total_seconds() <= 10 * 60:
+                        online_str = "🟢 Online"
+                    else:
+                        d_days = diff.days
+                        d_hours = diff.seconds // 3600
+                        d_mins = (diff.seconds % 3600) // 60
+                        if d_days > 0:
+                            online_str = f"Online: vor {d_days}T {d_hours}h"
+                        elif d_hours > 0:
+                            online_str = f"Online: vor {d_hours}h {d_mins}m"
+                        else:
+                            online_str = f"Online: vor {d_mins}m"
+                except:
+                    pass
+                    
+            status_badge = '<span style="color: #28a745; font-size: 0.7em; margin-left: auto; font-weight: bold;">🟢 Trinkt</span>' if is_active else '<span style="color: #6c757d; font-size: 0.7em; margin-left: auto;">⚪ Pause</span>'
             
             border_color = "#ff4b4b" if is_knuelle else "#4b8bff"
             bg_color = "#1e1e1e"
@@ -1637,8 +1661,11 @@ def social_view():
                 </div>
                 <div style="font-size: 0.85em; color: #aaaaaa; line-height: 1.4;">
                     <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; margin-right: 5px;"><b>P:</b> <span style="color:{border_color}; font-weight:bold;">{p_val}‰</span></span>
-                    <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; margin-right: 5px;"><b>Fav:</b> {fav_drink}</span>
-                    <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; font-style: italic;">Letzter Drink: {last_drink_str}</span>
+                    <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; margin-right: 5px;"><b>Fav:</b> {fav_drink}</span><br>
+                    <div style="margin-top: 5px;">
+                        <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; font-style: italic; margin-right: 5px;">Letzter Drink: {last_drink_str}</span>
+                        <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; font-style: italic; color: #888;">{online_str}</span>
+                    </div>
                 </div>
             </div>
             """
@@ -2200,6 +2227,22 @@ else:
         st.image("banner.png", use_column_width=True)
     except Exception as e:
         pass
+        
+    import time
+    current_time = time.time()
+    last_online = st.session_state.get('last_online_update', 0)
+    if current_time - last_online > 300: # Alle 5 Minuten updaten
+        try:
+            users_df = load_data(SHEET_USER_DB)
+            if 'Zuletzt_Online' not in users_df.columns:
+                users_df['Zuletzt_Online'] = None
+            idx = users_df[users_df['Username'] == st.session_state.username].index
+            if not idx.empty:
+                users_df.loc[idx[0], 'Zuletzt_Online'] = get_now_berlin().isoformat()
+                save_data(SHEET_USER_DB, users_df)
+            st.session_state['last_online_update'] = current_time
+        except Exception as e:
+            pass
         
     # Top Navigation Bar
     col_nav, col_logout = st.columns([0.85, 0.15])
