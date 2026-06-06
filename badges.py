@@ -238,7 +238,7 @@ def check_user_badges(user_entries_df):
     if ((weekdays == 6) & (hours < 10) & bier_general_mask).any(): earned.append("b41")
     
     alk_num = pd.to_numeric(df['Alk_Vol'], errors='coerce')
-    if (alk_num > 30.0) & (hours < 16).any(): earned.append("b42")
+    if ((alk_num > 30.0) & (hours < 16)).any(): earned.append("b42")
     
     # Unteroffizier Neu
     if shot_mask.any():
