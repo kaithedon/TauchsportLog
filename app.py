@@ -292,7 +292,7 @@ def _fetch_from_google(sheet_name):
         
     return df
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=600)
 def _load_data_internal(sheet_name):
     return _fetch_from_google(sheet_name)
 
