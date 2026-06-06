@@ -9,6 +9,12 @@ BADGES = [
     {"id": "b04", "name": "Feierabend-Bier", "rank": "Grundausbildung", "desc": "Ein Getränk zwischen 17:00 und 19:00 Uhr.", "icon": "🌇"},
     {"id": "b05", "name": "Nachtwache", "rank": "Grundausbildung", "desc": "Ein Getränk zwischen 00:00 und 04:00 Uhr.", "icon": "🦉"},
     {"id": "b06", "name": "Wochenend-Dienst", "rank": "Grundausbildung", "desc": "Ein Getränk an einem Samstag oder Sonntag.", "icon": "🗓️"},
+    {"id": "b31", "name": "Durstlöscher", "rank": "Grundausbildung", "desc": "Mehr als 1 Liter insgesamt getrunken.", "icon": "🚰"},
+    {"id": "b32", "name": "Apfelwein-Azubi", "rank": "Grundausbildung", "desc": "Den ersten Apfelwein/Äppler getrunken.", "icon": "🍏"},
+    {"id": "b33", "name": "Mittagspause", "rank": "Grundausbildung", "desc": "Ein Getränk zwischen 12:00 und 14:00 Uhr.", "icon": "🥪"},
+    {"id": "b34", "name": "Wochenstart", "rank": "Grundausbildung", "desc": "Montagsmorgen zwischen 06:00 und 12:00 getrunken.", "icon": "🥱"},
+    {"id": "b35", "name": "Exotik-Fan", "rank": "Grundausbildung", "desc": "Ein Getränk mit Maracuja oder Wild Berry.", "icon": "🌺"},
+    {"id": "b36", "name": "Schnellschuss", "rank": "Grundausbildung", "desc": "Ein Getränk unter 100ml gebucht.", "icon": "🤏"},
     
     # Gefreiter
     {"id": "b07", "name": "Gefreiter der Reserve", "rank": "Gefreiter", "desc": "10 Getränke insgesamt gebucht.", "icon": "🥉"},
@@ -17,6 +23,12 @@ BADGES = [
     {"id": "b10", "name": "Halber Liter", "rank": "Gefreiter", "desc": "Ein Getränk mit genau 500ml.", "icon": "🍺"},
     {"id": "b11", "name": "Montags-Maler", "rank": "Gefreiter", "desc": "Ein Getränk an einem Montag.", "icon": "🏠"},
     {"id": "b12", "name": "Süßkram-Schütze", "rank": "Gefreiter", "desc": "Ein Mixgetränk, Cola oder Energy getrunken.", "icon": "🥤"},
+    {"id": "b37", "name": "Weizen-Willi", "rank": "Gefreiter", "desc": "5 Weizenbier insgesamt getrunken.", "icon": "🌾"},
+    {"id": "b38", "name": "Koffein-Junkie", "rank": "Gefreiter", "desc": "3 Energy-Drinks oder Mate getrunken.", "icon": "🔋"},
+    {"id": "b39", "name": "Trio Infernale", "rank": "Gefreiter", "desc": "3 Getränke an einem einzigen Tag.", "icon": "🎳"},
+    {"id": "b40", "name": "Nachtschwärmer", "rank": "Gefreiter", "desc": "5 Getränke nachts (22-04 Uhr) gesamt.", "icon": "🦇"},
+    {"id": "b41", "name": "Konterbier", "rank": "Gefreiter", "desc": "Ein Bier vor 10:00 Uhr an einem Sonntag.", "icon": "🍳"},
+    {"id": "b42", "name": "Kaltstart", "rank": "Gefreiter", "desc": "Hartalkohol (>30%) vor 16:00 Uhr.", "icon": "🥶"},
     
     # Unteroffizier
     {"id": "b13", "name": "Unteroffizier vom Dienst", "rank": "Unteroffizier", "desc": "50 Getränke insgesamt.", "icon": "🥈"},
@@ -25,6 +37,12 @@ BADGES = [
     {"id": "b16", "name": "Hochprozentig", "rank": "Unteroffizier", "desc": "Ein Getränk mit mindestens 20% Alkohol.", "icon": "🥃"},
     {"id": "b17", "name": "Schnapsschütze", "rank": "Unteroffizier", "desc": "Einen Shot getrunken.", "icon": "🎯"},
     {"id": "b18", "name": "Kater-Kommando", "rank": "Unteroffizier", "desc": "Sonntagmorgen zwischen 06:00 und 12:00 Uhr.", "icon": "🤕"},
+    {"id": "b43", "name": "Schnellfeuer", "rank": "Unteroffizier", "desc": "3 Shots an einem Tag.", "icon": "🔫"},
+    {"id": "b44", "name": "Vampir", "rank": "Unteroffizier", "desc": "10 Getränke zwischen 00:00 und 04:00 Uhr gesamt.", "icon": "🧛"},
+    {"id": "b45", "name": "Liter-König", "rank": "Unteroffizier", "desc": "5 Getränke mit >= 1000ml gesamt.", "icon": "🏰"},
+    {"id": "b46", "name": "Bembel-Baron", "rank": "Unteroffizier", "desc": "20 Apfelwein gesamt getrunken.", "icon": "🏺"},
+    {"id": "b47", "name": "Feier-Woche", "rank": "Unteroffizier", "desc": "4 Tage am Stück getrunken (Streak).", "icon": "🥳"},
+    {"id": "b48", "name": "Schlaflos", "rank": "Unteroffizier", "desc": "Zwischen 04:00 und 06:00 Uhr morgens gebucht.", "icon": "😵"},
     
     # Offizier
     {"id": "b19", "name": "Stabsoffizier", "rank": "Offizier", "desc": "100 Getränke insgesamt.", "icon": "🥇"},
@@ -33,14 +51,26 @@ BADGES = [
     {"id": "b22", "name": "Weltbummler", "rank": "Offizier", "desc": "Getränke an 3 verschiedenen Tagen mit GPS.", "icon": "🌍"},
     {"id": "b23", "name": "Infanterie-Sturmabz.", "rank": "Offizier", "desc": "5 Shots an einem Tag.", "icon": "⚔️"},
     {"id": "b24", "name": "Bier-Baron", "rank": "Offizier", "desc": "50 klassische Biere getrunken.", "icon": "👑"},
+    {"id": "b49", "name": "Halbzeit", "rank": "Offizier", "desc": "150 Getränke insgesamt.", "icon": "🌗"},
+    {"id": "b50", "name": "Druckbetankung", "rank": "Offizier", "desc": "5 Getränke innerhalb von 2 Stunden.", "icon": "🏎️"},
+    {"id": "b51", "name": "Wochenend-Krieger", "rank": "Offizier", "desc": "50 Getränke an Wochenenden (Fr, Sa, So) gesamt.", "icon": "🛡️"},
+    {"id": "b52", "name": "Globetrotter", "rank": "Offizier", "desc": "Getränke an 10 verschiedenen Tagen mit GPS.", "icon": "🧭"},
+    {"id": "b53", "name": "Promille-Patrouille", "rank": "Offizier", "desc": "100 Getränke mit Alkohol.", "icon": "🚔"},
+    {"id": "b54", "name": "Quartalssäufer", "rank": "Offizier", "desc": "90 Tage seit dem ersten Getränk aktiv.", "icon": "🗓️"},
     
-    # General
+    # General (Extrem / Fast Unmöglich)
     {"id": "b25", "name": "Feldherr", "rank": "General", "desc": "250 Getränke insgesamt.", "icon": "🎖️🎖️"},
     {"id": "b26", "name": "Legende der Zapfsäule", "rank": "General", "desc": "500 Getränke insgesamt.", "icon": "🏆"},
     {"id": "b27", "name": "Ritterkreuz", "rank": "General", "desc": "20 Getränke an einem einzigen Tag.", "icon": "💀"},
     {"id": "b28", "name": "Veteran", "rank": "General", "desc": "Seit über 30 Tagen aktiv.", "icon": "👴"},
     {"id": "b29", "name": "Generalinspekteur", "rank": "General", "desc": "An jedem Wochentag mindestens einmal getrunken.", "icon": "📅"},
-    {"id": "b30", "name": "Sanitäter", "rank": "General", "desc": "20x Wasser getrunken.", "icon": "⚕️"}
+    {"id": "b30", "name": "Sanitäter", "rank": "General", "desc": "20x Wasser getrunken.", "icon": "⚕️"},
+    {"id": "b55", "name": "Jahrhundert-Trinker", "rank": "General", "desc": "1000 Getränke insgesamt. Nahezu unmöglich.", "icon": "🌌"},
+    {"id": "b56", "name": "Leber aus Stahl", "rank": "General", "desc": "30 Getränke an einem einzigen Tag. Wahnsinn.", "icon": "🦾"},
+    {"id": "b57", "name": "Marathon-Meister", "rank": "General", "desc": "30 Tage am Stück getrunken (Streak).", "icon": "🔥"},
+    {"id": "b58", "name": "Ozean-Schlucker", "rank": "General", "desc": "100 Liter Gesamtvolumen getrunken.", "icon": "🌊"},
+    {"id": "b59", "name": "Atlantis", "rank": "General", "desc": "100x Wasser getrunken.", "icon": "🐋"},
+    {"id": "b60", "name": "Koma-Kommando", "rank": "General", "desc": "10 Shots an einem einzigen Tag.", "icon": "⚰️"}
 ]
 
 def check_user_badges(user_entries_df):
@@ -174,6 +204,79 @@ def check_user_badges(user_entries_df):
     if wasser_mask.sum() >= 20:
         earned.append("b30")
         
+    # --- Neuzugänge ausbauen ---
+    total_ml_ges = pd.to_numeric(df['Menge_ml'], errors='coerce').sum()
+    
+    # Grundausbildung Neu
+    if total_ml_ges >= 1000: earned.append("b31")
+    
+    apfel_mask = df['Sorte'].str.contains("Apfelwein|Äppler|Bembel", case=False, na=False) | df['Marke'].str.contains("Apfelwein|Äppler|Bembel", case=False, na=False)
+    if apfel_mask.any(): earned.append("b32")
+    
+    if ((hours >= 12) & (hours < 14)).any(): earned.append("b33")
+    if ((weekdays == 0) & (hours >= 6) & (hours < 12)).any(): earned.append("b34")
+    
+    exo_mask = df['Sorte'].str.contains("Maracuja|Wild Berry", case=False, na=False)
+    if exo_mask.any(): earned.append("b35")
+    
+    menge_num = pd.to_numeric(df['Menge_ml'], errors='coerce')
+    if (menge_num < 100).any(): earned.append("b36")
+    
+    # Gefreiter Neu
+    weizen_mask = df['Sorte'].str.contains("Weizen|Weißbier", case=False, na=False)
+    if weizen_mask.sum() >= 5: earned.append("b37")
+    
+    energy_mask = df['Sorte'].str.contains("Energy|Mate", case=False, na=False) | df['Marke'].str.contains("Energy|Mate", case=False, na=False)
+    if energy_mask.sum() >= 3: earned.append("b38")
+    
+    if not daily_counts.empty and daily_counts.max() >= 3: earned.append("b39")
+    
+    nacht_mask = (hours >= 22) | (hours < 4)
+    if nacht_mask.sum() >= 5: earned.append("b40")
+    
+    bier_general_mask = df['Sorte'].str.contains("Bier|Pils|Helles|Export|Weizen", case=False, na=False) | df['Marke'].str.contains("Brauerei", case=False, na=False)
+    if ((weekdays == 6) & (hours < 10) & bier_general_mask).any(): earned.append("b41")
+    
+    alk_num = pd.to_numeric(df['Alk_Vol'], errors='coerce')
+    if (alk_num > 30.0) & (hours < 16).any(): earned.append("b42")
+    
+    # Unteroffizier Neu
+    if shot_mask.any():
+        shot_daily = df[shot_mask].groupby(df[shot_mask]['Zeitstempel'].dt.date).size()
+        if shot_daily.max() >= 3: earned.append("b43")
+        
+    if nacht_mask.sum() >= 10: earned.append("b44")
+    if (menge_num >= 1000).sum() >= 5: earned.append("b45")
+    if apfel_mask.sum() >= 20: earned.append("b46")
+    if max_streak >= 4: earned.append("b47")
+    if ((hours >= 4) & (hours < 6)).any(): earned.append("b48")
+    
+    # Offizier Neu
+    if total_drinks >= 150: earned.append("b49")
+    
+    # Druckbetankung (5 drinks in 2 hours)
+    df['time_2h'] = df['Zeitstempel'].rolling('2h', on='Zeitstempel').count()
+    if (df['time_2h'] >= 5).any(): earned.append("b50")
+    
+    we_mask = (weekdays == 4) | (weekdays == 5) | (weekdays == 6)
+    if we_mask.sum() >= 50: earned.append("b51")
+    
+    if 'latitude' in df.columns:
+        gps_df = df[df['latitude'].notna()]
+        gps_dates = gps_df['Zeitstempel'].dt.date.nunique()
+        if gps_dates >= 10: earned.append("b52")
+        
+    if (alk_num > 0).sum() >= 100: earned.append("b53")
+    if (last_drink - first_drink).days >= 90: earned.append("b54")
+    
+    # General Neu
+    if total_drinks >= 1000: earned.append("b55")
+    if not daily_counts.empty and daily_counts.max() >= 30: earned.append("b56")
+    if max_streak >= 30: earned.append("b57")
+    if total_ml_ges >= 100000: earned.append("b58")
+    if wasser_mask.sum() >= 100: earned.append("b59")
+    if shot_mask.any() and shot_daily.max() >= 10: earned.append("b60")
+    
     return earned
 
 def render_profile_badges(user_badges_list):
