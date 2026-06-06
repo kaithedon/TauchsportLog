@@ -12,31 +12,6 @@ from PIL import Image
 from streamlit_option_menu import option_menu
 from tenacity import retry, wait_exponential, stop_after_attempt
 import pytz
-import requests
-import urllib.parse
-
-# --- WHATSAPP CALLMEBOT CONFIG ---
-# Zum Anpassen für die finale Gruppen-ID: Einfach die Nummer im WA_PHONE-String überschreiben.
-WA_API_KEY = "8046166"
-WA_PHONE = "491781692862"
-
-def send_whatsapp_push(text):
-    """
-    Sendet eine asynchrone (non-blocking style via timeout) Push-Benachrichtigung 
-    an die hinterlegte WhatsApp-Gruppe via CallMeBot API.
-    """
-    try:
-        encoded_text = urllib.parse.quote(text)
-        url = f"https://api.callmebot.com/whatsapp.php?phone={WA_PHONE}&text={encoded_text}&apikey={WA_API_KEY}"
-        # Wir nutzen ein kurzes Timeout (z.B. 5 Sekunden), damit die Streamlit-App 
-        # nicht festhängt, falls der Bot-Server down ist.
-        response = requests.get(url, timeout=5)
-        # Optional: prüfen ob response.status_code == 200
-        return response.status_code == 200
-    except Exception as e:
-        # Fehler ignorieren, damit die Hauptanwendung stabil weiterläuft
-        print(f"[WA-Bot Error] Fehler beim Senden der Nachricht: {e}")
-        return False
 
 def get_now_berlin():
     return datetime.datetime.now(pytz.timezone('Europe/Berlin')).replace(tzinfo=None)
@@ -608,31 +583,16 @@ def book_drink_now(marke, sorte, menge, alk_vol, anzahl=1, buchungs_zeit=None, l
         news_rows = []
         for b in newly_earned:
             news_rows.append({
-                "Zeitstempel": pd.Timestamp.now().isoformat(),
+                "Zeitstempel": get_now_berlin().isoformat(),
                 "Username": st.session_state.username,
                 "Ereignisart": "Badge",
                 "Inhalt": b
             })
-            
-            # WhatsApp Push für Badge
-            b_dict = next((item for item in BADGES if item["id"] == b), None)
-            if b_dict:
-                badge_msg = (
-                    f"🎖️ *MILITÄRISCHE AUSZEICHNUNG!* \n\n"
-                    f"{st.session_state.username} wurde soeben mit dem Abzeichen *'{b_dict['name']}'* ({b_dict['icon']}) ausgezeichnet!\n\n"
-                    f"🎖️ *Rang:* {b_dict['rank']}\n"
-                    f"🎯 *Aufgabe erfüllt:* {b_dict['desc']}"
-                )
-                send_whatsapp_push(badge_msg)
                 
         if not news_df.empty or news_rows:
             news_df = pd.concat([news_df, pd.DataFrame(news_rows)], ignore_index=True)
             save_data(SHEET_NEWS_FEED, news_df)
             
-    # WhatsApp Push für Getränk
-    drink_msg = f"🍺 *Nachschub am Tresen!*\n{st.session_state.username} hat gerade ein {marke} {sorte} ({menge}ml) geloggt! Prosit! 🎉"
-    send_whatsapp_push(drink_msg)
-    
     # Statistiken für WA-Nachricht berechnen (nach dem Speichern)
     user_logs = logs_df[logs_df['Username'] == st.session_state.username].copy()
     user_logs['Zeitstempel'] = pd.to_datetime(user_logs['Zeitstempel'])
