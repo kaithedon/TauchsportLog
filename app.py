@@ -1313,6 +1313,20 @@ def upload_story_dialog():
 
 @st.dialog("Story")
 def view_story_dialog(username, story_idx, user_stories_df, ordered_active_users):
+    if user_stories_df.empty:
+        st.warning("Diese Story ist leider abgelaufen oder wurde gelöscht.")
+        if st.button("Schließen", use_container_width=True):
+            if "view_story" in st.query_params:
+                del st.query_params["view_story"]
+            if "story_idx" in st.query_params:
+                del st.query_params["story_idx"]
+            st.rerun()
+        return
+        
+    # Ensure story_idx is within bounds to prevent IndexError
+    if story_idx < 0 or story_idx >= len(user_stories_df):
+        story_idx = 0
+        
     story = user_stories_df.iloc[story_idx]
     image_data = story['image_data']
     
