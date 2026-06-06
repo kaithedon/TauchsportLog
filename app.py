@@ -35,6 +35,23 @@ st.markdown("""
         padding-bottom: 1.5rem !important;
     }
     
+    /* Sticky Bottom Navbar on Mobile */
+    @media (max-width: 768px) {
+        div.element-container:has(.sticky-nav-marker) + div.element-container {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            z-index: 999999 !important;
+            background-color: #0e1117 !important;
+            padding-bottom: env(safe-area-inset-bottom) !important;
+            box-shadow: 0px -4px 12px rgba(0,0,0,0.5) !important;
+        }
+        .block-container {
+            padding-bottom: 80px !important;
+        }
+    }
+    
     /* Storno Button Special */
     .storno-btn>button {
         border-color: #ff4b4b !important;
@@ -2285,6 +2302,7 @@ else:
     except ValueError:
         current_index = 0
 
+    st.markdown('<div class="sticky-nav-marker"></div>', unsafe_allow_html=True)
     choice = option_menu(
         menu_title=None,
         options=menu,
