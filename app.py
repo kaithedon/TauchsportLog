@@ -610,6 +610,13 @@ def book_drink_now(marke, sorte, menge, alk_vol, anzahl=1, buchungs_zeit=None, l
     nr_heute = len(user_logs[user_logs['Zeitstempel'].dt.date == heute])
     nr_jahr = len(user_logs[user_logs['Zeitstempel'].dt.year == dieses_jahr])
     
+    if "view_story" in st.query_params:
+        del st.query_params["view_story"]
+    if "story_idx" in st.query_params:
+        del st.query_params["story_idx"]
+    if "upload_story" in st.query_params:
+        del st.query_params["upload_story"]
+        
     st.session_state['show_success_popup'] = True
     st.session_state['last_wa_link'] = generate_whatsapp_link(st.session_state.username, anzahl, marke, sorte, nr_heute, nr_jahr)
     st.session_state['last_booked_label'] = f"{anzahl}x {marke}"
