@@ -67,6 +67,8 @@ BADGES = [
     {"id": "b30", "name": "Sanitäter", "rank": "General", "desc": "20x Wasser getrunken.", "icon": "⚕️"},
     {"id": "b55", "name": "Jahrhundert-Trinker", "rank": "General", "desc": "1000 Getränke insgesamt. Nahezu unmöglich.", "icon": "🌌"},
     {"id": "b56", "name": "Leber aus Stahl", "rank": "General", "desc": "30 Getränke an einem einzigen Tag. Wahnsinn.", "icon": "🦾"},
+    {"id": "b61", "name": "Titanen-Leber", "rank": "General", "desc": "40 Getränke an einem einzigen Tag. Unsterblich.", "icon": "🪨"},
+    {"id": "b62", "name": "Heiliger Gral", "rank": "General", "desc": "50 Getränke an einem einzigen Tag. Der Gott-Modus.", "icon": "🏆✨"},
     {"id": "b57", "name": "Marathon-Meister", "rank": "General", "desc": "30 Tage am Stück getrunken (Streak).", "icon": "🔥"},
     {"id": "b58", "name": "Ozean-Schlucker", "rank": "General", "desc": "100 Liter Gesamtvolumen getrunken.", "icon": "🌊"},
     {"id": "b59", "name": "Atlantis", "rank": "General", "desc": "100x Wasser getrunken.", "icon": "🐋"},
@@ -272,7 +274,12 @@ def check_user_badges(user_entries_df):
     
     # General Neu
     if total_drinks >= 1000: earned.append("b55")
-    if not daily_counts.empty and daily_counts.max() >= 30: earned.append("b56")
+    if not daily_counts.empty:
+        max_daily = daily_counts.max()
+        if max_daily >= 30: earned.append("b56")
+        if max_daily >= 40: earned.append("b61")
+        if max_daily >= 50: earned.append("b62")
+        
     if max_streak >= 30: earned.append("b57")
     if total_ml_ges >= 100000: earned.append("b58")
     if wasser_mask.sum() >= 100: earned.append("b59")
