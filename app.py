@@ -2271,7 +2271,7 @@ else:
             st.session_state.logged_in = False
             st.rerun()
             
-    menu = ["Live", "Getränke buchen", "Statistiken", "Mein Profil", "Welt"]
+    menu = ["Live", "Buchen", "Stats", "Profil", "Welt"]
     icons = ["people", "cup-hot", "bar-chart-line", "person", "globe"]
     if st.session_state.role == "Admin":
         menu.append("Admin-Bereich")
@@ -2293,8 +2293,8 @@ else:
         orientation="horizontal",
         styles={
             "container": {"padding": "0!important", "margin-bottom": "1rem"},
-            "icon": {"font-size": "18px"},
-            "nav-link": {"font-size": "15px", "text-align": "center", "margin": "0px", "--hover-color": "#4b4b4b"},
+            "icon": {"font-size": "16px"},
+            "nav-link": {"font-size": "13px", "text-align": "center", "margin": "0px", "--hover-color": "#4b4b4b", "padding": "10px 5px"},
             "nav-link-selected": {"background-color": "#ff4b4b"},
         }
     )
@@ -2310,13 +2310,13 @@ else:
         st.rerun()
             
     # Route to views
-    if choice == "Getränke buchen":
+    if choice == "Buchen":
         buchung_view()
-    elif choice == "Statistiken":
+    elif choice == "Stats":
         statistik_view()
     elif choice == "Live":
         social_view()
-    elif choice == "Mein Profil":
+    elif choice == "Profil":
         profil_view()
     elif choice == "Welt":
         welt_view()
