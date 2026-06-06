@@ -72,6 +72,7 @@ SHEET_GLOBALE_STATS = "Globale_Stats"
 SHEET_BACKUP_HISTORY = "Backup_History"
 SHEET_ACTIVATION_CODES = "Activation_Codes"
 SHEET_STORIES = "Stories"
+SHEET_NEWS_FEED = "News_Feed"
 
 COLUMNS = {
     SHEET_USER_DB: ["Username", "Password_Hash", "Gewicht_kg", "Groesse_cm", "Geschlecht", "Rolle", "Profilbild_Url"],
@@ -80,7 +81,8 @@ COLUMNS = {
     SHEET_GLOBALE_STATS: ["Key", "Value"],
     SHEET_BACKUP_HISTORY: ["Backup_Zeitstempel", "Log_ID", "Zeitstempel", "Username", "Marke", "Sorte", "Menge_ml", "Alk_Vol", "latitude", "longitude"],
     SHEET_ACTIVATION_CODES: ["Code", "Used", "Used_By", "Used_At"],
-    SHEET_STORIES: ["username", "image_data", "timestamp"]
+    SHEET_STORIES: ["username", "image_data", "timestamp"],
+    SHEET_NEWS_FEED: ["Zeitstempel", "Username", "Ereignisart", "Inhalt"]
 }
 
 def generate_master_drinks():
@@ -518,7 +520,14 @@ def generate_whatsapp_link(username, anzahl, marke, sorte, nr_heute, nr_jahr):
 def book_drink_now(marke, sorte, menge, alk_vol, anzahl=1, buchungs_zeit=None, lat=None, lon=None):
     if buchungs_zeit is None:
         buchungs_zeit = get_now_berlin()
+        
     logs_df = load_data(SHEET_KONSUM_LOG)
+    
+    # Zustand vorher prüfen
+    from badges import check_user_badges
+    my_old_logs = logs_df[logs_df['Username'] == st.session_state.username]
+    old_badges = check_user_badges(my_old_logs)
+    
     new_logs = []
     for _ in range(anzahl):
         new_logs.append({
@@ -534,6 +543,25 @@ def book_drink_now(marke, sorte, menge, alk_vol, anzahl=1, buchungs_zeit=None, l
         })
     logs_df = pd.concat([logs_df, pd.DataFrame(new_logs)], ignore_index=True)
     save_data(SHEET_KONSUM_LOG, logs_df)
+    
+    # Zustand nachher prüfen
+    my_new_logs = logs_df[logs_df['Username'] == st.session_state.username]
+    new_badges = check_user_badges(my_new_logs)
+    
+    newly_earned = set(new_badges) - set(old_badges)
+    if newly_earned:
+        news_df = load_data(SHEET_NEWS_FEED)
+        news_rows = []
+        for b in newly_earned:
+            news_rows.append({
+                "Zeitstempel": pd.Timestamp.now().isoformat(),
+                "Username": st.session_state.username,
+                "Ereignisart": "Badge",
+                "Inhalt": b
+            })
+        if not news_df.empty or news_rows:
+            news_df = pd.concat([news_df, pd.DataFrame(news_rows)], ignore_index=True)
+            save_data(SHEET_NEWS_FEED, news_df)
     
     # Statistiken für WA-Nachricht berechnen (nach dem Speichern)
     user_logs = logs_df[logs_df['Username'] == st.session_state.username].copy()
@@ -1623,14 +1651,38 @@ def social_view():
         now = pd.Timestamp.now()
         
         with col_feed:
-            st.write("**Letzte Buchungen**")
-            feed_logs = recent_logs.sort_values(by='Zeitstempel', ascending=False).head(100)
-            with st.container(height=150):
-                for _, r in feed_logs.iterrows():
-                    diff = now - r['Zeitstempel']
-                    mins = int(diff.total_seconds() // 60)
-                    st.markdown(f"**{r['Username']}** trank **{r['Marke']}** <small style='color:gray;'>(vor {mins}m)</small>", unsafe_allow_html=True)
-                    
+            st.write("**News & Letzte Buchungen**")
+            
+            feed_logs = recent_logs[['Zeitstempel', 'Username', 'Marke']].copy()
+            feed_logs = feed_logs.rename(columns={'Marke': 'Inhalt'})
+            feed_logs['Type'] = 'Drink'
+            feed_logs['Zeitstempel'] = pd.to_datetime(feed_logs['Zeitstempel'])
+            
+            try:
+                news_df = load_data(SHEET_NEWS_FEED)
+                if not news_df.empty:
+                    badge_logs = news_df[['Zeitstempel', 'Username', 'Ereignisart', 'Inhalt']].copy()
+                    badge_logs = badge_logs.rename(columns={'Ereignisart': 'Type'})
+                    badge_logs['Zeitstempel'] = pd.to_datetime(badge_logs['Zeitstempel'])
+                    feed_logs = pd.concat([feed_logs, badge_logs], ignore_index=True)
+            except:
+                pass
+                
+            if not feed_logs.empty:
+                feed_logs = feed_logs.sort_values(by='Zeitstempel', ascending=False).head(100)
+                from badges import BADGES
+                with st.container(height=150):
+                    for _, r in feed_logs.iterrows():
+                        diff = now - r['Zeitstempel']
+                        mins = int(diff.total_seconds() // 60)
+                        
+                        if r.get('Type') == 'Badge':
+                            b_id = r['Inhalt']
+                            badge_info = next((b for b in BADGES if b['id'] == b_id), None)
+                            if badge_info:
+                                st.markdown(f"🏆 **{r['Username']}** hat das Abzeichen **{badge_info['icon']} {badge_info['name']}** erreicht! <small style='color:gray;'>(vor {mins}m)</small>", unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"🍺 **{r['Username']}** trank **{r['Inhalt']}** <small style='color:gray;'>(vor {mins}m)</small>", unsafe_allow_html=True)
         with col_today:
             st.write("**Heute getrunken**")
             today_logs = recent_logs[recent_logs['Zeitstempel'].dt.date == now.date()]
