@@ -1554,6 +1554,10 @@ def render_stories_bar():
     st.markdown(html, unsafe_allow_html=True)
 
 def social_view():
+    if "view_profile_of" in st.query_params:
+        st.session_state.view_profile_of = st.query_params["view_profile_of"]
+        del st.query_params["view_profile_of"]
+        
     if st.session_state.get('view_profile_of'):
         public_profile_view(st.session_state.view_profile_of)
         return
@@ -1660,11 +1664,18 @@ def social_view():
             border_color = "#ff4b4b" if is_knuelle else "#4b8bff"
             bg_color = "#1e1e1e"
             
+            q_params_view = dict(st.query_params)
+            q_params_view["view_profile_of"] = uname
+            import urllib.parse
+            link = "?" + urllib.parse.urlencode(q_params_view)
+            profil_btn_html = f'<a href="{link}" target="_self" style="text-decoration: none; font-size: 0.75em; padding: 3px 8px; border-radius: 4px; background-color: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.2); margin-left: 10px;">📊 Profil</a>'
+            
             card_html = f"""
             <div style="background-color: {bg_color}; padding: 12px; border-radius: 8px; border-left: 5px solid {border_color}; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
                 <div style="display:flex; align-items:center; margin-bottom: 6px;">
                     {img_html}
                     <strong style="font-size:1.1em; color: #ffffff;">{uname}</strong>
+                    {profil_btn_html}
                     {status_html}
                 </div>
                 <div style="font-size: 0.85em; color: #aaaaaa; line-height: 1.4;">
@@ -1678,10 +1689,6 @@ def social_view():
             """
             
             st.markdown(card_html, unsafe_allow_html=True)
-            
-            if st.button("📊 Profil", key=f"btn_{uname}", use_container_width=True):
-                st.session_state.view_profile_of = uname
-                st.rerun()
 
     st.subheader("Knülle")
     active_users = sorted(active_users, key=lambda x: x['p_val'], reverse=True)
