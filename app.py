@@ -275,12 +275,12 @@ def get_worksheet(sheet_name):
         st.info(f"Tabellenblatt '{sheet_name}' wird erstellt...")
         return sheet.add_worksheet(title=sheet_name, rows="1000", cols="20")
 
-@retry(wait=wait_exponential(multiplier=1, min=1, max=10), stop=stop_after_attempt(5))
+@retry(wait=wait_exponential(multiplier=1, min=1, max=5), stop=stop_after_attempt(3))
 def _fetch_from_google(sheet_name):
     ws = get_worksheet(sheet_name)
     # Read everything into a dataframe
     # Drop rows where all elements are NaN
-    df = get_as_dataframe(ws, evaluate_formulas=True)
+    df = get_as_dataframe(ws, evaluate_formulas=False)
     df = df.dropna(how='all')
     
     if df.empty or len(df.columns) == 0:
@@ -288,14 +288,14 @@ def _fetch_from_google(sheet_name):
         
     return df
 
-@st.cache_data(ttl=15)
+@st.cache_data(ttl=30)
 def _load_data_internal(sheet_name):
     return _fetch_from_google(sheet_name)
 
 def load_data(sheet_name):
     return _load_data_internal(sheet_name).copy()
 
-@retry(wait=wait_exponential(multiplier=1, min=1, max=10), stop=stop_after_attempt(5))
+@retry(wait=wait_exponential(multiplier=1, min=1, max=5), stop=stop_after_attempt(3))
 def save_data(sheet_name, df, clear_cache=True):
     ws = get_worksheet(sheet_name)
     ws.clear()
