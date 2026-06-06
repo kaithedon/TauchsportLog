@@ -27,6 +27,17 @@ st.set_page_config(
 # --- STYLING ---
 st.markdown("""
     <style>
+    /* Verstecke Streamlit Header, Footer und Cloud-Badges */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stDeployButton {display: none !important;}
+    [data-testid="stAppDeployButton"] {display: none !important;}
+    [data-testid="manage-app-button"] {display: none !important;}
+    #st-app-deploy-button {display: none !important;}
+    div[class^="viewerBadge"] {display: none !important;}
+    div[class^="manageApp"] {display: none !important;}
+    
     /* Layout/Padding Fix für Mobilgeräte */
     .block-container {
         padding-left: 0.2rem !important;
