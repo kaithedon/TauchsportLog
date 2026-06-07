@@ -27,11 +27,11 @@ st.set_page_config(
 # --- STYLING ---
 st.markdown("""
     <style>
-    /* Verstecke Streamlit Header, Footer und Cloud-Badges */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .stDeployButton {display: none !important;}
+    /* Verstecke Streamlit Header, Footer und Cloud-Badges - Jetzt vorübergehend deaktiviert, um das Menü zugänglich zu machen */
+    /* #MainMenu {visibility: hidden;} */
+    /* footer {visibility: hidden;} */
+    /* header {visibility: hidden;} */
+    /* .stDeployButton {display: none !important;} */
     [data-testid="stAppDeployButton"] {display: none !important;}
     [data-testid="manage-app-button"] {display: none !important;}
     #st-app-deploy-button {display: none !important;}
@@ -1933,7 +1933,24 @@ def admin_view():
                 {"Marke": "Cabernet Sauvignon", "Kategorie": "Rotwein", "Vol": 14.0},
                 {"Marke": "Provence Rosé", "Kategorie": "Roséwein", "Vol": 12.5},
                 {"Marke": "Rotkäppchen Sekt", "Kategorie": "Sekt", "Vol": 11.0},
-                {"Marke": "Moët & Chandon", "Kategorie": "Champagner", "Vol": 12.0}
+                {"Marke": "Moët & Chandon", "Kategorie": "Champagner", "Vol": 12.0},
+                {"Marke": "Veuve Clicquot", "Kategorie": "Champagner", "Vol": 12.0},
+                {"Marke": "Dom Pérignon", "Kategorie": "Champagner", "Vol": 12.5},
+                {"Marke": "Krug", "Kategorie": "Champagner", "Vol": 12.0},
+                {"Marke": "Ruinart", "Kategorie": "Champagner", "Vol": 12.5},
+                {"Marke": "Bollinger", "Kategorie": "Champagner", "Vol": 12.0},
+                {"Marke": "Taittinger", "Kategorie": "Champagner", "Vol": 12.5},
+                {"Marke": "Laurent-Perrier", "Kategorie": "Champagner", "Vol": 12.0},
+                {"Marke": "Pommery", "Kategorie": "Champagner", "Vol": 12.5},
+                {"Marke": "Piper-Heidsieck", "Kategorie": "Champagner", "Vol": 12.0},
+                {"Marke": "Mumm (Champagner)", "Kategorie": "Champagner", "Vol": 12.0},
+                {"Marke": "Henkell Trocken", "Kategorie": "Sekt", "Vol": 11.5},
+                {"Marke": "Freixenet", "Kategorie": "Cava", "Vol": 11.5},
+                {"Marke": "Mionetto", "Kategorie": "Prosecco", "Vol": 11.0},
+                {"Marke": "Geldermann", "Kategorie": "Sekt", "Vol": 12.0},
+                {"Marke": "Krimsekt", "Kategorie": "Schaumwein", "Vol": 12.0},
+                {"Marke": "Asti Spumante", "Kategorie": "Schaumwein", "Vol": 7.5},
+                {"Marke": "Jules Mumm", "Kategorie": "Sekt", "Vol": 11.0}
             ]
 
             neue_wein_formen = [
